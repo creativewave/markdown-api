@@ -1,0 +1,49 @@
+{
+  "name": "@cdoublev/markdown-api",
+  "description": "Command line interface to build and manage (JSON) API endpoints from JS and markdown source files.",
+  "author": "Guillaume Lebas",
+  "license": "MIT",
+  "keywords": [
+    "markdown"
+  ],
+  "version": "0.1.0",
+  "homepage": "https://github.com/creativewave/markdown-api",
+  "bugs": {
+    "url": "https://github.com/creativewave/markdown-api/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/creativewave/markdown-api.git"
+  },
+  "bin": {
+    "api": "./api.js"
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint . || true",
+    "publish": "npm publish --access public",
+    "test": "mocha",
+    "test:report": "mocha -R mocha-junit-reporter --reporter-options mochaFile=test/results.xml",
+    "test:watch": "mocha -w -R min"
+  },
+  "dependencies": {
+    "commander": "^2.18.0",
+    "folktale": "^2.3.2",
+    "highlightjs": "^9.12.0",
+    "imagemin": "^6.1.0",
+    "imagemin-webp": "^5.0.0",
+    "lodash": "^4.17.11",
+    "marked": "^0.5.2",
+    "watchpack": "^1.6.0"
+  },
+  "devDependencies": {
+    "eslint": "^5.14.1",
+    "mocha": "^5.2.0",
+    "mocha-clean": "^1.0.0",
+    "mocha-junit-reporter": "^1.18.0"
+  }
+}

@@ -1,0 +1,37 @@
+version: 2
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test-nodejs-10
+      - test-nodejs-11
+jobs:
+  test-nodejs-10: &test-template
+    working_directory: ~/markdown-api
+    docker:
+      - image: node:11.10.0-stretch
+    steps:
+      - checkout
+      - run:
+          name: npm-update
+          command: 'npm install -g npm@latest'
+      - restore_cache:
+          key: npm-update-{{ checksum "package.json" }}
+      - run:
+          name: npm-install
+          command: npm install
+      - restore_cache:
+          key: npm-install-{{ checksum "package.json" }}
+          paths:
+            - ./node_modules
+      - run:
+          command: npm run lint && npm run test:report
+          when: always
+      - store_artifacts:
+          path: test/results.xml
+      - store_test_results:
+          path: test/results.xml
+  test-nodejs-11:
+    <<: *test-template
+    docker:
+      - image: node:10.15.2-stretch
