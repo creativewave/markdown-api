@@ -25,7 +25,6 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint . || true",
-    "publish": "npm publish --access public",
     "test": "mocha",
     "test:report": "mocha -R mocha-junit-reporter --reporter-options mochaFile=test/results.xml",
     "test:watch": "mocha -w -R min"
