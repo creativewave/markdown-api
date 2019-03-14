@@ -112,7 +112,9 @@ module.exports = {
   dist: String,
   entitiesPerPage: Number,
   excerpt: String,
+  hash: Boolean,
   src: String,
+  subVersion: Boolean,
   title: String,
 }
 ```
@@ -201,12 +203,18 @@ It's a kind of search interface on top of a low level JavaScript API made to han
 Parameters:
 
 ```
-  -s, --src <src>    path to sources directory (required) (default: "./src/api")
-  -d, --dist <dist>  path to distribution directory (required) (default: "./dist/api")
-  -f, --force        build without checking if sources have been updated
-  -p, --pp           entities per (index) page (default: 10)
-  -w, --watch        automatically build on change
+  -s, --src <src>        path to sources directory (required) (default: "./src/api")
+  -d, --dist <dist>      path to distribution directory (required) (default: "./dist/api")
+  -f, --force            build without checking if sources have been updated
+  -p, --entitiesPerPage  entities per (index) page (default: 10)
+  -h, --hash             create endpoints using hashes for long term cache (default: false)
+  -S, --subVersion       keep previous generated (JSON) endpoints (default: false)
+  -w, --watch            automatically build on change
 ```
+
+Check [doc/long-term-cache](doc/long-term-cache.md) to learn more about `options.hash`, long term caching of endpoints, `options.subVersion`, and preserving endpoints versions between build updates.
+
+`options.subVersion` can't be activated without `options.hash` being `true`.
 
 ### `api stats`
 
@@ -214,7 +222,6 @@ Parameters:
 
 ## TODO
 
-- Feature: endpoints long term caching using hash
 - Feature: `api get` (define and implement behavior)
 - Feature: `api stats` (define and implement behavior)
 - Feature: `-t, --type` option for `api build` (to only build endpoints of the corresponding resources type(s))

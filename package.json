@@ -19,6 +19,7 @@
     "api": "./api.js"
   },
   "directories": {
+    "doc": "doc",
     "lib": "lib",
     "test": "test"
   },
