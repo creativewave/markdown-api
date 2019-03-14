@@ -19,8 +19,8 @@ It also provides:
 - [x] endpoints for resources lists (indexes)
 - [x] a low level JavaScript API to create, read, update, and delete endpoints (headless CMS)
 - [x] a small build time, by writing or removing only what needs to be created, updated, or removed
-- [ ] (opt-in) long term caching of endpoints via a hash in file names and a endpoints/hash tree
-- [ ] (opt-in) defining resources fields, relations, and files contents using schemas
+- [x] (opt-in) long term caching of endpoints via a hash in endpoints filenames
+- [ ] (opt-in) defining fields, relations, and files contents using schemas for each resource type
 - [ ] (opt-in) batching CRUD operations, to avoid building after each individual operation
 
 ## How it works?
