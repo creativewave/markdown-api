@@ -1,6 +1,8 @@
 
 const addDirectory = require('../lib/fs/addDirectory')
+const addDist = require('../lib/entry/addDist')
 const addEntities = require('../lib/entry/addEntities')
+const addEntity = require('../lib/entry/addEntity')
 const addFile = require('../lib/fs/addFile')
 const addStaticDirs = require('../lib/entry/addStaticDirs')
 const assign = require('lodash/fp/assign')
@@ -31,7 +33,6 @@ const paginate = require('../lib/paginate')
 const prop = require('lodash/fp/prop')
 const removeDirectories = require('../lib/fs/removeDirectories')
 const removeDists = require('../lib/entry/removeDists')
-const removeEntities = require('../lib/entry/removeEntities')
 const removeStaticDirs = require('../lib/entry/removeStaticDirs')
 const Result = require('folktale/result')
 const safeRequire = require('../lib/module/require')
@@ -39,91 +40,136 @@ const setHash = require('../lib/entry/setHash')
 const sortBy = require('lodash/fp/sortBy')
 const setEntities = require('../lib/entry/setEntities')
 const setProp = require('../lib/collection/setProp')
+const setStaticDirs = require('../lib/entry/setStaticDirs')
 const setVersion = require('../lib/entry/setVersion')
 const Task = require('folktale/concurrency/task')
 const transduce = require('../lib/lambda/transduce')
 
 /**
- * addCategoriesIndex :: Path -> CategoriesIndex -> Task Error Path
- *
- * CategoriesIndex => { [IndexName]: IndexTitle }
+ * setManifestEndpoint :: Manifest -> Task Error Path
  */
-const addCategoriesIndex = (dir, index) =>
-    addFile(join(dir, 'index.json'), JSON.stringify(index))
+const addManifestEndpoint = (manifest, { distIndexes }) =>
+    addFile(join(distIndexes, 'manifest.json'), JSON.stringify(manifest))
+        .orElse(logReject('There was an error while trying to write manifest'))
+
+/**
+ * addCategoriesIndex :: Path -> CategoriesIndex -> Task Error Path
+ */
+const addCategoriesIndex = (dir, index, hash) =>
+    addFile(join(dir, hash ? `index-${hash}.json` : 'index.json'), JSON.stringify(index))
         .orElse(logReject('There was an error while trying to write categories index'))
 
 /**
- * addEntitiesIndex :: Path -> Index -> Task Error Path
- *
- * Index => { entities: [EntityIndex], next: Path, prev: Path }
+ * addEntitiesIndex :: Path -> Index -> Boolean -> Task Error Path
  */
-const addEntitiesIndex = (dir, index) =>
-    addDirectory(dir).chain(() => addFile(join(dir, 'index.json'), JSON.stringify(index)))
+const addEntitiesIndex = (dir, index, hash) =>
+    addDirectory(dir)
+        .chain(() => addFile(join(dir, hash ? `index-${hash}.json` : 'index.json'), JSON.stringify(index)))
 
 /**
- * addEntitiesIndexes :: Path -> Indexes -> Task Error [[Path]]
+ * addEntitiesIndexes :: Path -> Indexes -> IndexManifest -> Task Error [[Path]]
  *
  * Indexes => { [IndexName]: Pages }
  * Pages   => { [Page]: Index }
+ * IndexManifest => { [IndexName]: { [Page]: String } }
  */
-const addEntitiesIndexes = (dir, indexes) =>
+const addEntitiesIndexes = (dir, indexes, manifest) =>
     mapTask(([category, pages]) =>
         mapTask(([page, index]) =>
-            addEntitiesIndex(join(dir, category, page), index),
+            addEntitiesIndex(join(dir, category, page), index, manifest[category][page]),
         Object.entries(pages))
-        .orElse(logReject(`There was an error while trying to write indexes for category '${category}'`)),
+        .orElse(logReject(`There was an error while trying to write indexes of category '${category}'`)),
     Object.entries(indexes))
 
 /**
- * addIndexes :: Path -> Indexes -> Indexes -> [[Path]]
+ * setIndexesEndpoints :: IndexesUpdate -> Options -> Manifest -> Task Error IndexesResults
  *
+ * IndexesUpdate => { cache: Indexes, remove: [Path], write: Indexes }
  * Indexes => { [IndexName]: Pages }
+ * Options => {
+ *   dist: Path,
+ *   distIndexes: Path,
+ *   entitiesPerPage: Number,
+ *   force: Boolean,
+ *   hash: Boolean,
+ *   src: Path,
+ *   subVersion: Boolean,
+ *   type: EntityType,
+ * }
+ * Manifest => {
+ *   categories: String,
+ *   entities: EntityManifest,
+ *   indexes: IndexManifest,
+ * }
+ * IndexesResults => { remove: [Path], write: [Path] }
  */
-const addIndexes = (path, entities, cache) =>
-    addEntitiesIndexes(path, entities)
-        .and(addCategoriesIndex(path, Object.keys(cache).reduce((categories, category) =>
-            assign({ [category]: 'all' === category ? 'Tous les articles' : capitalize(category) }, categories), {})))
-
-/**
- * setIndexesEndpoints :: Path -> IndexesUpdate -> Task Error IndexesResults
- *
- * IndexesUpdate  => { cache: Indexes, write: Indexes, remove: [Path] }
- * IndexesResults => { write: [Path], remove: [Path] }
- */
-const setIndexesEndpoints = (path, { cache, remove, write }) =>
+const setIndexesEndpoints = ({ cache, remove, write }, { distIndexes }, manifest) =>
     isEmpty(remove) && isEmpty(write)
         ? Task.of({ remove: [], write: [] })
-        : Task.of(write => remove => () => ({ remove, write }))
-            .apply(addIndexes(path, write, cache).map(flatten))
+        : Task.of(write => remove => () => () => ({ remove, write }))
+            .apply(addEntitiesIndexes(distIndexes, write, manifest.indexes).map(flatten))
             .apply(removeDirectories(remove))
-            .apply(addFile(join(path, 'cache.json'), JSON.stringify(cache)))
+            .apply(addCategoriesIndex(
+                distIndexes,
+                Object.keys(cache).reduce((categories, category) => assign(
+                    { [category]: 'all' === category ? 'All' : capitalize(category) },
+                    categories),
+                {}),
+                manifest.categories))
+            .apply(addFile(join(distIndexes, 'cache.json'), JSON.stringify(cache)))
 
 /**
- * setEntitiesEndpoints :: EntriesUpdate -> Task Error EntitiesResults
+ * setEntitiesEndpoints :: EntriesUpdate -> Options -> Task Error EntitiesResults
  *
- * EntriesUpdate   => { add: [Entry], remove: [Entry], update: [Entry] }
- * EntitiesResults => { add: [Entry], remove: [Entry], update: [Entry], staticDirs: [Entry] }
+ * EntriesUpdate => { add: [Entry], remove: [Entry], update: [Entry] }
+ * Options => {
+ *   dist: Path,
+ *   distIndexes: Path,
+ *   entitiesPerPage: Number,
+ *   force: Boolean,
+ *   hash: Boolean,
+ *   src: Path,
+ *   subVersion: Boolean,
+ *   type: EntityType,
+ * }
+ * EntitiesResults => {
+ *   add: [Entry],
+ *   remove: [Entry],
+ *   update: [Entry],
+ *   staticDirs: [Entry]
+ * }
  */
-const setEntitiesEndpoints = ({ add, remove, update }) =>
+const setEntitiesEndpoints = ({ add, remove, update }, { hash, subVersion }) =>
     Task.of(([add]) => ([remove]) => update => staticDirs => ({ add, remove, staticDirs, update }))
-        .apply(addEntities(add).and(addStaticDirs(add)))
+        .apply(mapTask(entry => addDist(entry).chain(addEntity), add).and(addStaticDirs(add)))
         .apply(removeDists(remove).and(removeStaticDirs(remove)))
-        .apply(removeEntities(update.filter(prop('hasEntityUpdate'))).chain(setEntities))
-        .apply(removeStaticDirs(update.filter(prop('hasStaticDirUpdate'))).chain(addStaticDirs))
+        .apply((hash && subVersion ? addEntities : setEntities)(update.filter(prop('hasEntityUpdate'))))
+        .apply(setStaticDirs(update.filter(prop('hasStaticDirUpdate'))))
         .orElse(logReject('There was an error while trying to write entities'))
 
 /**
  * setEndpoints :: Update -> Task Error Result
  *
- * Update          => { Options, entries: EntriesUpdate, indexes: IndexesUpdate }
- * Result          => { entities: EntitiesResults, indexes: IndexesResults, type: EntryType }
- * EntitiesResults => { add: Number, remove: Number, update: Number, staticDirs: Number }
- * IndexesResults  => { write: Number, remove: Number }
+ * Update => {
+ *   entries: EntriesUpdate,
+ *   indexes: IndexesUpdate,
+ *   Options,
+ *   Manifest,
+ * }
+ * Result => { entities: EntitiesResults, indexes: IndexesResults }
+ * EntitiesResults => {
+ *   add: Number,
+ *   remove: Number,
+ *   update: Number,
+ *   staticDirs: Number,
+ * }
+ * IndexesResults => { write: Number, remove: Number }
  */
-const setEndpoints = update =>
-    setEntitiesEndpoints(update.entries).and(setIndexesEndpoints(update.options.distIndexes, update.indexes))
-        .map(map(mapValues(prop('length'))))
-        .map(([entities, indexes]) => ({ entities, indexes }))
+const setEndpoints = ({ entries, indexes, manifest, options }) =>
+    Task.of(entities => indexes => () => ({ entities, indexes }))
+        .apply(setEntitiesEndpoints(entries, options).map(mapValues('length')))
+        .apply(setIndexesEndpoints(indexes, options, manifest).map(mapValues('length')))
+        .apply(options.hash ? addManifestEndpoint(manifest, options) : Task.of({}))
 
 /**
  * getManifestUpdate :: Update -> Update
@@ -405,9 +451,9 @@ const getEntriesUpdate = options =>
     getDirectoriesFilesNames([join(options.src, options.type), join(options.dist, options.type)])
         .orElse(logReject(`There was an error while reading '${options.type}'`))
         .map(([src, dist], add = difference(src, dist)) => ({
-            add: getEntries(options.src, options.dist, options.type, add).map(assign({ hasEntityUpdate: true, hasIndexUpdate: true })),
-            old: getEntries(options.src, options.dist, options.type, difference(src, add)),
-            remove: getEntries(options.src, options.dist, options.type, difference(dist, src)),
+            add: getEntries(add, options).map(assign({ hasEntityUpdate: true, hasIndexUpdate: true })),
+            old: getEntries(difference(src, add), options),
+            remove: getEntries(difference(dist, src), options),
         }))
         .chain(({ add, old, remove }) => Task.of(update => ({ add, remove, update }))
             .apply(options.force

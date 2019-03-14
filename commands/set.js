@@ -20,7 +20,7 @@ const compactEntity = entity => Object.keys(entity).reduce(
  * set :: Options -> Task Error Results
  */
 const set = ({ name, src, type, ...entity }, slug = slugify(entity.title)) =>
-    setEntry({ entity: assign({ slug }, compactEntity(entity)), ...getEntry(src, '', type, name) })
+    setEntry({ entity: assign({ slug }, compactEntity(entity)), ...getEntry(name, { src, type }) })
         .orElse(logReject('There was an error while trying to set entry'))
 
 module.exports = set

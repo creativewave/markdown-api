@@ -78,8 +78,16 @@ const setOptions = ({
  * It collects entries by using their names, and return them to assert against
  * them in `expectUpdate`.
  */
-const setEntries = (expected, { dist, src, type } = setOptions(expected.options)) =>
-    mapValues(map(entry => ({ ...entry, ...getEntry(src, dist, type, entry.name) })), expected.entries)
+const setEntries = (expected, { dist, hash, src, type } = setOptions(expected.options)) =>
+    mapValues(
+        map(entry => {
+
+            const normalizedEntry = getEntry(entry.name, { dist, src, type })
+            const distIndex = join(normalizedEntry.dist, `index${hash ? `-${entry.entity.hash}` : ''}.json`)
+
+            return { ...entry, ...normalizedEntry, distIndex }
+        }),
+        expected.entries)
 
 /**
  * setExpected :: Update -> Update
