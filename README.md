@@ -192,7 +192,7 @@ Parameters:
 
 (TODO) `api get` outputs either raw or processed contents of a single or multiple resource entries, optionally using filters.
 
-It's a kind of search interface on top of a low level JavaScript API made to handle client requests for reading a specific resources.
+It's a kind of search interface on top of a low level JavaScript API made to handle client requests to `GET` (read) specific resources.
 
 ### `api build`
 
