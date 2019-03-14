@@ -26,7 +26,7 @@
  * place before running build tests (to recursively set a last modified time >
  * `fixture/build/src`) and each test case expecting an update on a specific
  * endpoint (entity, index, static file) should refresh the last modified time
- * of the corresponding source content file using `fs.setFileLastModifiedTime`.
+ * of the corresponding source content file using `fs.setLastModifiedTime`.
  *
  * How to setup a new build test case?
  *
@@ -48,7 +48,7 @@ const mapTask = require('../lib/lambda/mapTask')
 const mapValues = require('lodash/fp/mapValues')
 const removeDirectory = require('../lib/fs/removeDirectory')
 const removeFile = require('../lib/fs/removeFile')
-const setFileLastModifiedTime = require('../lib/fs/setFileLastModifiedTime')
+const setLastModifiedTime = require('../lib/fs/setLastModifiedTime')
 
 const fixturesPath = join(__dirname, 'fixtures', 'build')
 
@@ -235,7 +235,7 @@ describe('build#getEndpointsUpdate()', () => {
         const indexes = { all: pages, 'test-updated-index': pages }
         const indexesUpdate = { cache: indexes, write: indexes }
 
-        await setFileLastModifiedTime(entries.update[0].srcIndex).run().promise()
+        await setLastModifiedTime(entries.update[0].srcIndex).run().promise()
 
         return expectUpdate({ entries, indexes: indexesUpdate, options })
     })
@@ -260,7 +260,7 @@ describe('build#getEndpointsUpdate()', () => {
         }
         const entries = setEntries({ entries: { update: [entry] }, options })
 
-        await setFileLastModifiedTime(entries.update[0].srcContent).run().promise()
+        await setLastModifiedTime(entries.update[0].srcContent).run().promise()
 
         return expectUpdate({ entries, options })
 
@@ -290,7 +290,7 @@ describe('build#getEndpointsUpdate()', () => {
         const indexes = { all: pages, test: pages }
         const indexesUpdate = { cache: indexes, write: indexes }
 
-        await setFileLastModifiedTime(entries.update[0].srcExcerpt).run().promise()
+        await setLastModifiedTime(entries.update[0].srcExcerpt).run().promise()
 
         return expectUpdate({ entries, indexes: indexesUpdate, options })
     })
@@ -306,7 +306,7 @@ describe('build#getEndpointsUpdate()', () => {
         }
         const entries = setEntries({ entries: { update: [entry] }, options })
 
-        await setFileLastModifiedTime(join(entries.update[0].srcStatic, 'static.svg')).run().promise()
+        await setLastModifiedTime(join(entries.update[0].srcStatic, 'static.svg')).run().promise()
 
         return expectUpdate({ entries, options })
 
@@ -428,7 +428,7 @@ describe('build#getEndpointsUpdate()', () => {
         }
         const indexesUpdate = { cache: indexes, options, write: indexes }
 
-        await setFileLastModifiedTime(entries.update[0].srcIndex).run().promise()
+        await setLastModifiedTime(entries.update[0].srcIndex).run().promise()
 
         return expectUpdate({ entries, indexes: indexesUpdate, options })
 
