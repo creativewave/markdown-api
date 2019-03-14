@@ -16,6 +16,7 @@ const getDirectoriesFilesNames = require('../lib/fs/getDirectoriesFilesNames')
 const getDirectoryFilesNames = require('../lib/fs/getDirectoryFilesNames')
 const getEntity = require('../lib/entry/getEntity')
 const getEntries = require('../lib/entry/getEntries')
+const getHash = require('../lib/string/getHash')
 const getProp = require('../lib/collection/getProp')
 const getUpdatedEntries = require('../lib/entry/getUpdatedEntries')
 const isEmpty = require('lodash/fp/isEmpty')
@@ -25,6 +26,7 @@ const logReject = require('../lib/console/logReject')
 const map = require('../lib/lambda/map')
 const mapTask = require('../lib/lambda/mapTask')
 const mapValues = require('lodash/fp/mapValues')
+const merge = require('lodash/fp/merge')
 const paginate = require('../lib/paginate')
 const prop = require('lodash/fp/prop')
 const removeDirectories = require('../lib/fs/removeDirectories')
@@ -124,6 +126,42 @@ const setEndpoints = update =>
         .map(([entities, indexes]) => ({ entities, indexes }))
 
 /**
+ * getManifestUpdate :: Update -> Update
+ *
+ * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, Manifest, Options }
+ * IndexesUpdate => { cache: Indexes, remove: [Path], write: Indexes }
+ * Indexes => { [IndexName]: Pages }
+ * Pages => { [Page]: Index }
+ * Index => { hash: String, entities: [EntityIndex], prev: Path, next: Path }
+ * Manifest => {
+ *   categories: String,
+ *   entities: EntityManifest,
+ *   indexes: IndexManifest,
+ * }
+ * EntityManifest => { [EntryName]: String }
+ * IndexManifest => { [IndexName]: { [Page]: String } }
+ *
+ * It should collect `Index.hash`es.
+ * It should collect `EntityIndex.hash`es.
+ */
+const getManifestUpdate = update => assign({
+    manifest: {
+        categories: Object.keys(update.indexes.cache.all).reduce((hash, category) => `${hash}${getHash(category)}`, ''),
+        entities: Object.values(update.indexes.cache.all).reduce(
+            (manifest, pages) => Object.values(pages).reduce(
+                (manifest, { hash, name }) => merge({ [name]: hash }, manifest),
+                manifest),
+            {}),
+        indexes: Object.entries(update.indexes.cache).reduce(
+            (manifest, [category, pages]) => Object.entries(pages).reduce(
+                (manifest, [page, { hash }]) => merge({ [category]: { [page]: hash } }, manifest),
+                assign({ [category]: {} }, manifest)
+            ),
+            {}),
+    },
+}, update)
+
+/**
  * reduceIndexes :: { [IndexName]: [EntityIndex] } -> Update -> [IndexName, { Page: Index }] -> Update
  *
  * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, Options }
@@ -207,7 +245,7 @@ const reduceIndexes = write => (update, [category, pages]) => {
     nextEntities = sortBy('date', nextEntities)
 
     // (6) Paginate
-    let nextPages = paginate(nextEntities, update.options.entitiesPerPage, firstPage)
+    let nextPages = paginate(nextEntities, { limit: update.options.entitiesPerPage, offset: firstPage })
     const previousPages = transduce(filterReducer(([page]) => page < firstPage), setProp, {}, Object.entries(pages))
     const nextCache = { ...previousPages, ...nextPages }
     // Get previous pages indexes paths whose number is greater than the new pages count
@@ -325,7 +363,13 @@ const getIndexesUpdate = (update, write = getIndexesToWrite(update)) =>
     Object.keys(write).reduce(
         (update, category) => {
             if (!update.indexes.cache[category]) {
-                update.indexes.cache[category] = paginate(write[category], update.options.entitiesPerPage)
+                update.indexes.cache[category] = paginate(
+                    write[category],
+                    {
+                        hash: update.options.hash,
+                        limit: update.options.entitiesPerPage,
+                    }
+                )
                 update.indexes.write[category] = update.indexes.cache[category]
             }
             return update
@@ -417,7 +461,10 @@ const getEntriesUpdate = options =>
  *   Options,
  * }
  */
-const getEndpointsUpdate = compose(map(getIndexesUpdate), getEntriesUpdate)
+const getEndpointsUpdate = compose(
+    map(update => update.options.hash ? getManifestUpdate(update) : update),
+    map(getIndexesUpdate),
+    getEntriesUpdate)
 
 /**
  * buildType :: EntityType -> Options -> Task Error Result
@@ -457,6 +504,8 @@ const buildType = (type, options) =>
  *    - Remove endpoints (removed resources)
  * 2. Indexes
  *    - Add/update/remove endpoints (based from 1)
+ * 3. (Optional) Manifest
+ *    - Add manifest (based from indexes cache in 2)
  *
  * Terminology:
  * - endpoint: a file in the distribution directory
@@ -466,6 +515,7 @@ const buildType = (type, options) =>
  * - entry: an object used as a unit of state of an entity existing either in
  *   the source or in the distribution directory
  * - indexes: a tree of paginated lists of entities indexes
+ * - manifest: a tree of endpoints mapped to their hash
  */
 const build = options =>
     getDirectoryFilesNames(options.src)
@@ -476,7 +526,12 @@ const build = options =>
             Task.of({})))
 
 module.exports = Object.assign(
-    build,
-    // Testable units:
-    { getEndpointsUpdate, getEntriesUpdate, getIndexesUpdate },
+    build, {
+        // Testable units:
+        getEndpointsUpdate,
+        // Testable sub units:
+        getEntriesUpdate,
+        getIndexesUpdate,
+        getManifestUpdate,
+    },
 )
