@@ -6,7 +6,6 @@ const addStaticDirs = require('../lib/entry/addStaticDirs')
 const assign = require('lodash/fp/assign')
 const capitalize = require('lodash/fp/capitalize')
 const categorize = require('../lib/categorize')
-const compact = require('lodash/fp/compact')
 const compose = require('lodash/fp/compose')
 const difference = require('lodash/fp/difference')
 const every = require('lodash/fp/every')
@@ -34,9 +33,11 @@ const removeEntities = require('../lib/entry/removeEntities')
 const removeStaticDirs = require('../lib/entry/removeStaticDirs')
 const Result = require('folktale/result')
 const safeRequire = require('../lib/module/require')
+const setHash = require('../lib/entry/setHash')
 const sortBy = require('lodash/fp/sortBy')
 const setEntities = require('../lib/entry/setEntities')
 const setProp = require('../lib/collection/setProp')
+const setVersion = require('../lib/entry/setVersion')
 const Task = require('folktale/concurrency/task')
 const transduce = require('../lib/lambda/transduce')
 
@@ -120,16 +121,16 @@ const setEntitiesEndpoints = ({ add, remove, update }) =>
 const setEndpoints = update =>
     setEntitiesEndpoints(update.entries).and(setIndexesEndpoints(update.options.distIndexes, update.indexes))
         .map(map(mapValues(prop('length'))))
-        .map(([entities, indexes]) => ({ entities, indexes, type: update.options.type }))
+        .map(([entities, indexes]) => ({ entities, indexes }))
 
 /**
  * reduceIndexes :: { [IndexName]: [EntityIndex] } -> Update -> [IndexName, { Page: Index }] -> Update
  *
- * Update        => { options: OptionsUpdate, entries: EntriesUpdate, indexes: IndexesUpdate }
- * IndexesUpdate => { cache: Indexes, write: Indexes, remove: [Path] }
- * Indexes       => { [IndexName]: Pages }
- * Pages         => { [Page]: Index }
- * Index         => { entities: [EntityIndex], prev: Path, next: Path }
+ * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, Options }
+ * IndexesUpdate => { cache: Indexes, remove: [Path], write: Indexes }
+ * Indexes => { [IndexName]: Pages }
+ * Pages => { [Page]: Index }
+ * Index => { entities: [EntityIndex], hash?: Number, prev: Path, next: Path }
  *
  * It is too hard and slow to iterate over each `EntityIndex`, check if it needs
  * to be removed, or if another `EntityIndex` should be writed before, handle
@@ -242,10 +243,19 @@ const reduceIndexesUpdate = (update, cache, write) =>
 /**
  * getIndexesCache :: Options -> Result Error Indexes
  *
- * Options => { entitiesPerPage: Number, force: Boolean, dist: Path, src: Path }
+ * Options => {
+ *   dist: Path,
+ *   distIndexes: Path,
+ *   entitiesPerPage: Number,
+ *   force: Boolean,
+ *   hash: Boolean,
+ *   src: Path,
+ *   subVersion: Boolean,
+ *   type: EntityType,
+ * }
  * Indexes => { [IndexName]: Pages }
- * Pages   => { [Page]: Index }
- * Index   => { entities: [EntityIndex], prev: Path, next: Path }
+ * Pages => { [Page]: Index }
+ * Index => { entities: [EntityIndex], hash?: String, prev: Path, next: Path }
  *
  * TODO (fix missing indexes directory): it should return a rejected task and
  * log an error when `/dist/api/categories` is missing, or ideally, it should
@@ -258,9 +268,9 @@ const getIndexesCache = ({ distIndexes, force }) =>
 /**
  * getIndexesToWrite :: Update -> { IndexName: [EntityIndex] }
  *
- * Update        => { Options, entries: EntriesUpdate, indexes: IndexesUpdate }
+ * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, Options }
  * EntriesUpdate => { add: [Entry], remove: [Entry], update: [Entry] }
- * Entry         => { ...Entry, Entity }
+ * Entry => { ...Entry, Entity }
  *
  * It should filter out `Update.entries.remove`.
  * It should filter in `Update.entries.update` with `.hasIndexUpdate` or if
@@ -293,11 +303,9 @@ const getIndexesToWrite = update =>
 /**
  * getIndexesUpdate :: Update -> Update
  *
- * Update        => { Options, entries: EntriesUpdate, indexes: IndexesUpdate }
- * IndexesUpdate => { cache: Indexes, write: Indexes, remove: [Path] }
- * Indexes       => { [IndexName]: Pages }
- * Pages         => { [Page]: Index }
- * Index         => { entities: [EntityIndex], prev: Path, next: Path }
+ * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, Options }
+ * IndexesUpdate => { cache: Indexes, remove: [Path], write: Indexes }
+ * Indexes => { [IndexName]: Pages }
  *
  * If not empty, it should reduce a cached indexes tree and set:
  * - `update.indexes.cache`  with the next indexes tree
@@ -329,8 +337,17 @@ const getIndexesUpdate = (update, write = getIndexesToWrite(update)) =>
 /**
  * getEntriesUpdate :: Options -> Task Error Update
  *
- * Options       => { entitiesPerPage: Number, force: Boolean, dist: Path, src: Path }
- * Update        => { Options, entries: EntriesUpdate }
+ * Options => {
+ *   dist: Path,
+ *   distIndexes: Path,
+ *   entitiesPerPage: Number,
+ *   force: Boolean,
+ *   hash: Boolean,
+ *   src: Path,
+ *   subVersion: Boolean,
+ *   type: EntityType,
+ * }
+ * Update => { entries: EntriesUpdate, Options }
  * EntriesUpdate => { add: [Entry], remove: [Entry], update: [Entry] }
  *
  * TODO (feature: use `slug` for endpoint path): think if this feature should be
@@ -351,15 +368,25 @@ const getEntriesUpdate = options =>
         .chain(({ add, old, remove }) => Task.of(update => ({ add, remove, update }))
             .apply(options.force
                 ? Task.of(old.map(assign({ hasEntityUpdate: true, hasIndexUpdate: true, hasStaticDirUpdate: true })))
-                : getUpdatedEntries(old))
+                : getUpdatedEntries(old, options))
             .orElse(logReject(`There was an error while getting updated '${options.type}'`)))
         .chain(entries => Object.entries(entries).reduce(
             (task, [op, entries]) => task
                 .and(['add', 'update'].includes(op)
                     ? entries.reduce(
                         (task, entry) => entry.hasIndexUpdate || entry.hasEntityUpdate
-                            ? task.and(getEntity(entry)).map(([entries, entity]) =>
-                                entity.draft ? entries : [...entries, { ...entry, entity }])
+                            ? task.and(getEntity(entry)).map(([entries, entity]) => {
+                                if (entity.draft) {
+                                    return entries
+                                }
+                                if (options.hash) {
+                                    if (options.version) {
+                                        return [...entries, setVersion(setHash({ ...entry, entity }))]
+                                    }
+                                    return [...entries, setHash({ ...entry, entity })]
+                                }
+                                return [...entries, { ...entry, entity }]
+                            })
                             : Task.of(entries),
                         Task.of([]))
                     : Task.of(entries))
@@ -373,18 +400,54 @@ const getEntriesUpdate = options =>
 /**
  * getEndpointsUpdate :: Options -> Task Error Update
  *
- * Options => { entitiesPerPage: Number, force: Boolean, dist: Path, src: Path }
- * Update  => { Options, entries: EntriesUpdate, indexes: IndexesUpdate }
+ * Options => {
+ *   dist: Path,
+ *   distIndexes: Path,
+ *   entitiesPerPage: Number,
+ *   force: Boolean,
+ *   hash: Boolean,
+ *   src: Path,
+ *   subVersion: Boolean,
+ *   type: EntityType,
+ * }
+ * Update => {
+ *   entries: EntriesUpdate,
+ *   indexes: IndexesUpdate,
+ *   Manifest,
+ *   Options,
+ * }
  */
 const getEndpointsUpdate = compose(map(getIndexesUpdate), getEntriesUpdate)
 
 /**
- * build :: Options -> Task Error [Result]
+ * buildType :: EntityType -> Options -> Task Error Result
  *
- * Options         => { entitiesPerPage: Number, force: Boolean, dist: Path, src: Path }
- * Result          => { entities: EntitiesResults, indexes: IndexesResults, type: EntryType }
- * EntitiesResults => { add: Number, remove: Number, update: Number, staticDirs: Number }
- * IndexesResults  => { write: Number, remove: Number }
+ * Options => {
+ *   dist: Path,
+ *   entitiesPerPage: Number,
+ *   force: Boolean,
+ *   hash: Boolean,
+ *   src: Path,
+ *   subVersion: Boolean,
+ * }
+ */
+const buildType = (type, options) =>
+    getEndpointsUpdate({ ...options, distIndexes: join(options.dist, 'categories', type), type })
+        .chain(setEndpoints)
+        .orElse(() => Task.of()) // Nothing to build
+
+/**
+ * build :: Options -> Task Error Results
+ *
+ * Options => {
+ *   dist: Path,
+ *   entitiesPerPage: Number,
+ *   force: Boolean,
+ *   hash: Boolean,
+ *   src: Path,
+ *   subVersion: Boolean,
+ * }
+ * Results => { [EntityType]: Result }
  *
  * It builds API endpoints:
  *
@@ -406,11 +469,11 @@ const getEndpointsUpdate = compose(map(getIndexesUpdate), getEntriesUpdate)
  */
 const build = options =>
     getDirectoryFilesNames(options.src)
-        .chain(mapTask(type =>
-            getEndpointsUpdate({ ...options, distIndexes: join(options.dist, 'categories', type), type })
-                .chain(setEndpoints)
-                .orElse(() => Task.of())))
-            .map(compact)
+        .chain(types => types.reduce(
+            (build, type) => build
+                .and(buildType(type, options))
+                    .map(([results, result]) => result ? setProp(results, [type, result]) : results),
+            Task.of({})))
 
 module.exports = Object.assign(
     build,

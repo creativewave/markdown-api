@@ -22,10 +22,10 @@ const runBuild = options => {
         .orElse(logReject('Invalid parameter'))
         .map(getOptions(included))
         .chain(build)
-        .map(map(result => {
-            console.group(result.type)
-            console.table({ entities: result.entities })
-            console.table({ indexes: result.indexes })
+        .map(results => Object.entries(results).map(([type, { entities, indexes }]) => {
+            console.group(type)
+            console.table({ entities })
+            console.table({ indexes })
             console.groupEnd()
         }))
         .map(() => console.timeEnd('API endpoints built in'))
