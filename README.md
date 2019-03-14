@@ -100,7 +100,7 @@ Markdown API has been developped and used in production with NodeJS >= 10. Tests
 
 ## Configuration
 
-An optional configuration file can be used to define default values for all command options values, except the `--name, -n` option which is required to update or remove a resource entry.
+An optional configuration file named `api.config.js` can be used to define default values for all command options values, except the `--name, -n` and `--type, -t` options which are required to update or remove a resource entry.
 
 The path to `api.config.js` will be resolved to the directory where the command is run from. Each configuration value might be a function returning the expected value.
 
