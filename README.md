@@ -93,7 +93,7 @@ dist
 ## Installation
 
 ```shell
-  npm i @creativewave/markdown-api
+  npm i @cdoublev/markdown-api
 ```
 
 Markdown API has been developped and used in production with NodeJS >= 10. Tests for support of previous versions may come later.
