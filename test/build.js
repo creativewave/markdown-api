@@ -42,6 +42,7 @@ const assert = require('assert')
 const build = require('../commands/build')
 const copyDirectory = require('../lib/fs/copyDirectory')
 const getEntry = require('../lib/entry/getEntry')
+const getHash = require('../lib/string/getHash')
 const { join } = require('path')
 const map = require('../lib/lambda/map')
 const mapTask = require('../lib/lambda/mapTask')
@@ -61,14 +62,18 @@ const setOptions = ({
     dist,
     entitiesPerPage = 10,
     force = false,
+    hash = false,
     src,
     type = 'posts',
+    subVersion = false,
 }) => ({
     dist: join(fixturesPath, 'dist', dist, 'api'),
     distIndexes: join(fixturesPath, 'dist', dist, 'api', 'categories', type),
     entitiesPerPage,
     force,
+    hash,
     src: join(fixturesPath, 'src', src),
+    subVersion,
     type,
 })
 
