@@ -509,4 +509,40 @@ describe('build#getEndpointsUpdate()', () => {
         return expectUpdate({ entries, indexes, options })
 
     })
+
+    it('returns update for a single entry to add [with hash]', () => {
+
+        const options = { dist: 'empty', hash: true, src: 'single' }
+        const content = '<h1 id=\"content\">Content</h1>\n'
+        /* eslint-disable sort-keys */
+        const entityIndex = {
+            excerpt: '<p><em>Excerpt</em></p>\n',
+            name: 'entry',
+            categories: ['test'],
+            date: 20000101,
+            slug: 'entry',
+            title: 'title',
+        }
+        /* eslint-enable sort-keys */
+        entityIndex.hash = getHash(JSON.stringify({ content, ...entityIndex }))
+
+        const entity = { ...entityIndex, content }
+        const entry = {
+            entity,
+            hasEntityUpdate: true,
+            hasIndexUpdate: true,
+            name: entityIndex.name,
+        }
+        const entries = setEntries({ entries: { add: [entry] }, options })
+
+        const pages = { 1: { entities: [entityIndex], hash: getHash(entityIndex.hash), next: '', prev: '' } }
+        const indexes = { all: pages, test: pages }
+        const indexesUpdate = { cache: indexes, write: indexes }
+
+        return expectUpdate({ entries, indexes: indexesUpdate, options })
+    })
+
+    // it('returns update for multiple entries to add [with hash]', async () => {
+
+    // })
 })
