@@ -49,7 +49,7 @@ module.exports = {
 
 The resource will be indexed in resources lists named after the specified `categories`.
 
-**Note:** loading an optional schema (see [TODO](##todo) and [lib/schema.js](lib/schema.js)) via the CLI `--schema` option or via the `schemas` configuration property in the [optional configuration file](#configuration), will later provide a way for a resource type to define its relations with other types, as well as its fields and their association to specific file names.
+**Note:** later, loading schema-s (see [TODO](##todo) and [lib/schema.js](lib/schema.js)) via the CLI `--schema` option or the `schemas` property in the [optional configuration file](#configuration), will provide a way to define relations for each resource type with other resource type, as well as its fields and their association to specific file names.
 
 **With the following source files tree...**
 
