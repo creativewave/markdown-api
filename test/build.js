@@ -446,9 +446,9 @@ describe('build#getEndpointsUpdate()', () => {
 
     // })
 
-    it('returns update for a single entry to add [with paginaton]', async () => {
+    it('returns update for a single entry to add [with paginaton][with cache]', async () => {
 
-        const options = { dist: 'with-pagination', entitiesPerPage: 1, src: 'multiple' }
+        const options = { dist: 'with-pagination-with-cache', entitiesPerPage: 1, src: 'multiple' }
         const beforeEntityIndex = {
             categories: ['test'],
             date: 19991231,
