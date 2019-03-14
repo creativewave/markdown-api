@@ -146,7 +146,9 @@ Parameters:
   -D, --date [date]              date for the new entry (default: today with format yyyddmm)
 ```
 
-Example: `api add -t posts -T "My new post title" -C announcements,general -d 20190101`
+```shell
+  api add -t posts -T "My new post title" -C announcements,general -D 20190101
+```
 
 ### `api set`
 
@@ -165,7 +167,9 @@ Parameters:
   -D, --date [date]              date for the new entry
 ```
 
-Example: `api set -t posts -n my-new-blog -T "My new blog post"`
+```shell
+  api set -t posts -n my-new-post-title -T "My new blog post"
+```
 
 ### `api remove`
 
@@ -180,7 +184,9 @@ Parameters:
   -n, --name <name>  name of the directory containing the sources files (required)
 ```
 
-Example: `api remove -t posts -n my-new-blog`
+```shell
+  api remove -t posts -n my-new-blog-post
+```
 
 ### `api get`
 
