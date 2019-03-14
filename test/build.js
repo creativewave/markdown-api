@@ -52,7 +52,18 @@ const setFileLastModifiedTime = require('../lib/fs/setFileLastModifiedTime')
 
 const fixturesPath = join(__dirname, 'fixtures', 'build')
 
-const setOptions = ({ dist, entitiesPerPage = 10, force = false, src, type = 'posts' }) => ({
+/**
+ * setOptions :: Options -> Options
+ *
+ * It sets default options by only requiring `options.src` and `options.dist`.
+ */
+const setOptions = ({
+    dist,
+    entitiesPerPage = 10,
+    force = false,
+    src,
+    type = 'posts',
+}) => ({
     dist: join(fixturesPath, 'dist', dist, 'api'),
     distIndexes: join(fixturesPath, 'dist', dist, 'api', 'categories', type),
     entitiesPerPage,
@@ -62,19 +73,19 @@ const setOptions = ({ dist, entitiesPerPage = 10, force = false, src, type = 'po
 })
 
 /**
- * setEntries :: Path -> Update -> EntriesUpdate
+ * setEntries :: [EntryName] -> [Entries]
  *
- * It transforms entries defined in `Update` (at least with their `name`s), and
- * return them to assert against them in `expectUpdate`.
+ * It collects entries by using their names, and return them to assert against
+ * them in `expectUpdate`.
  */
 const setEntries = (expected, { dist, src, type } = setOptions(expected.options)) =>
     mapValues(map(entry => ({ ...entry, ...getEntry(src, dist, type, entry.name) })), expected.entries)
 
 /**
- * setExpected :: Path -> Update -> Update
+ * setExpected :: Update -> Update
  *
- * It merges given `Update` with one with default properties/values, in order to
- * preserve its expected structure, and to write more declarative tests.
+ * It sets default properties/values to given `Update` in order to preserve its
+ * expected structure (and to write more declarative tests).
  */
 const setExpected = ({ entries = {}, indexes = {}, options }) => ({
     entries: { add: [], remove: [], update: [], ...entries },
@@ -83,7 +94,7 @@ const setExpected = ({ entries = {}, indexes = {}, options }) => ({
 })
 
 /**
- * expectUpdate :: Path -> Update -> Promise
+ * expectUpdate :: Update -> Promise Error void
  *
  * Update => { entries: EntriesUpdate, indexes: IndexesUpdate }
  *
