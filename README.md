@@ -66,7 +66,7 @@ src
         ...
 ```
 
-**... the `api build` command will create the following files tree:**
+**... the `api build` command will create the following distribution files tree:**
 
 ```
 dist
