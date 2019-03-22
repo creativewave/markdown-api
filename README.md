@@ -27,15 +27,39 @@ It also provides:
 
 ## How it works?
 
-Each resource entry should be contained in its own directory (its name will act as its identifier), contained itself in a directory named after the resource type, eg. `posts`.
+Each resource entry should be contained in its own directory (its name will act as its identifier), contained itself in a directory named after the resource type, eg. `posts`:
+
+```
+src
+  └── posts
+    └── my-post-identifier-1
+      └── …
+    └── my-post-identifier-2
+      └── …
+    └── …
+  └── …
+```
 
 Each resource entry requires 3 mandatory files:
+
+```
+src
+  └── posts
+    └── my-post-identifier-1
+      └── content.md
+      └── excerpt.md
+      └── index.js
+      └── static/
+          └── …
+    └── …
+  └── …
+```
 
 - `content.md`: the main content
 - `excerpt.md`: the content used in indexes
 - `index.js`: the meta data (also used in indexes)
 
-Static files referenced in those contents may be stored in an optional `static` folder. All static files will be copied into the dist folder, and optionally processed by an image optimizer (default to `imagemin` and `imagemin-webp`).
+Static files referenced in those contents may be stored in the optional `static` folder. All static files will be copied into the dist folder, and optionally processed by an image optimizer (default to `imagemin` and `imagemin-webp`).
 
 `index.js`:
 
@@ -53,7 +77,7 @@ The resource will be indexed in resources lists named after the specified `categ
 
 **Note:** later, loading schema-s (see [TODO](##todo) and [lib/schema.js](lib/schema.js)) via the CLI `--schema` option or the `schemas` property in the [optional configuration file](#configuration), will provide a way to define relations for each resource type with other resource type, as well as its fields and their association to specific file names.
 
-**With the following source files tree...**
+**With the following source files tree…**
 
 ```
 src
@@ -65,10 +89,10 @@ src
       └── static
         └── img.jpg
     └── entry-2
-        ...
+        …
 ```
 
-**... the `api build` command will create the following distribution files tree:**
+**… the `api build` command will create the following distribution files tree:**
 
 ```
 dist
