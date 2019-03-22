@@ -132,7 +132,7 @@ Its path will be resolved to the directory where the command is run from. Each c
 
 ```js
 module.exports = {
-  categories: Array,
+  categories: [String],
   content: String,
   date: Number, // YYYYMMDD
   dist: String,
