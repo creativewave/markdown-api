@@ -14,7 +14,7 @@
 
 Markdown API is a JavaScript command line interface to build and manage (JSON) API endpoints using JavaScript and Markdown files to describe resource contents.
 
-It provides a *developer experience* in content management using an advanced editor and/or the command line interface, as an alternative to the *CMS experience* using the browser and a WYSIWYG editor, and bound to multiple dependencies like PHP or Ruby, MySQL or MongoDB, etc...
+It provides a ***developer experience*** in content management using an advanced editor and/or the command line interface, as an alternative to the *CMS experience* using the browser and a WYSIWYG editor, and bound to multiple dependencies like PHP or Ruby, MySQL or MongoDB, etc…
 
 It also provides:
 
