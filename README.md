@@ -1,3 +1,5 @@
+![Logo Markdown API](logo.svg)
+
 [![CircleCI](https://circleci.com/gh/creativewave/markdown-api.svg?style=svg)](https://circleci.com/gh/creativewave/markdown-api)
 
 # Markdown API
