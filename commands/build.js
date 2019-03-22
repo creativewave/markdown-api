@@ -5,7 +5,6 @@ const addEntities = require('../lib/entry/addEntities')
 const addEntity = require('../lib/entry/addEntity')
 const addFile = require('../lib/fs/addFile')
 const addStaticDirs = require('../lib/entry/addStaticDirs')
-const assign = require('lodash/fp/assign')
 const capitalize = require('lodash/fp/capitalize')
 const categorize = require('../lib/categorize')
 const compose = require('lodash/fp/compose')
@@ -111,10 +110,10 @@ const setIndexesEndpoints = ({ cache, remove, write }, { distIndexes, subVersion
             .apply(removeDirectories(remove))
             .apply(addCategoriesIndex(
                 distIndexes,
-                Object.keys(cache).reduce((categories, category) => assign(
-                    { [category]: 'all' === category ? 'All' : capitalize(category) },
-                    categories),
-                {}),
+                Object.keys(cache).reduce((categories, category) => ({
+                    ...categories,
+                    [category]: 'all' === category ? 'All' : capitalize(category),
+                }), {}),
                 manifest.categories))
             .apply(addFile(join(distIndexes, 'cache.json'), JSON.stringify(cache)))
 
@@ -190,7 +189,8 @@ const setEndpoints = ({ entries, indexes, manifest, options }) =>
  * It should collect `Index.hash`es.
  * It should collect `EntityIndex.hash`es.
  */
-const getManifestUpdate = update => assign({
+const getManifestUpdate = update => ({
+    ...update,
     manifest: {
         categories: Object.keys(update.indexes.cache.all).reduce((hash, category) => `${hash}${getHash(category)}`, ''),
         entities: Object.values(update.indexes.cache.all).reduce(
@@ -201,11 +201,10 @@ const getManifestUpdate = update => assign({
         indexes: Object.entries(update.indexes.cache).reduce(
             (manifest, [category, pages]) => Object.entries(pages).reduce(
                 (manifest, [page, { hash }]) => merge({ [category]: { [page]: hash } }, manifest),
-                assign({ [category]: {} }, manifest)
-            ),
+                { ...manifest, [category]: {} }),
             {}),
     },
-}, update)
+})
 
 /**
  * reduceIndexes :: { [IndexName]: [EntityIndex] } -> Update -> [IndexName, { Page: Index }] -> Update
@@ -422,7 +421,7 @@ const getIndexesUpdate = (update, write = getIndexesToWrite(update)) =>
         },
         getIndexesCache(update.options)
             .map(cache => reduceIndexesUpdate(update, cache, write))
-            .getOrElse(assign({ indexes: { cache: {}, remove: [], write: {} } }, update)))
+            .getOrElse({ ...update, indexes: { cache: {}, remove: [], write: {} } }))
 
 /**
  * getEntriesUpdate :: Options -> Task Error Update
@@ -451,13 +450,13 @@ const getEntriesUpdate = options =>
     getDirectoriesFilesNames([join(options.src, options.type), join(options.dist, options.type)])
         .orElse(logReject(`There was an error while reading '${options.type}'`))
         .map(([src, dist], add = difference(src, dist)) => ({
-            add: getEntries(add, options).map(assign({ hasEntityUpdate: true, hasIndexUpdate: true })),
+            add: getEntries(add, options).map(entry => ({ ...entry, hasEntityUpdate: true, hasIndexUpdate: true })),
             old: getEntries(difference(src, add), options),
             remove: getEntries(difference(dist, src), options),
         }))
         .chain(({ add, old, remove }) => Task.of(update => ({ add, remove, update }))
             .apply(options.force
-                ? Task.of(old.map(assign({ hasEntityUpdate: true, hasIndexUpdate: true, hasStaticDirUpdate: true })))
+                ? Task.of(old.map(entry => ({ ...entry, hasEntityUpdate: true, hasIndexUpdate: true, hasStaticDirUpdate: true })))
                 : getUpdatedEntries(old, options))
             .orElse(logReject(`There was an error while getting updated '${options.type}'`)))
         .chain(entries => Object.entries(entries).reduce(

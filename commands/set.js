@@ -1,5 +1,4 @@
 
-const assign = require('lodash/fp/assign')
 const getEntry = require('../lib/entry/getEntry')
 const logReject = require('../lib/console/logReject')
 const setEntry = require('../lib/entry/setEntry')
@@ -20,7 +19,7 @@ const compactEntity = entity => Object.keys(entity).reduce(
  * set :: Options -> Task Error Results
  */
 const set = ({ name, src, type, ...entity }, slug = slugify(entity.title)) =>
-    setEntry({ entity: assign({ slug }, compactEntity(entity)), ...getEntry(name, { src, type }) })
+    setEntry({ entity: { ...compactEntity(entity), slug }, ...getEntry(name, { src, type }) })
         .orElse(logReject('There was an error while trying to set entry'))
 
 module.exports = set
