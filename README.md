@@ -188,7 +188,7 @@ Parameters:
   -t, --type <type>              type of the entry to set (required)
   -s, --src <src>                path to sources directory (required) (default: "./src/api")
   -n, --name <name>              name of the directory containing the sources files (required)
-  -t, --title [title]            new title for the entry
+  -T, --title [title]            new title for the entry
   -c, --content [content]        new content for the entry
   -e, --excerpt [excerpt]        new excerpt for the entry
   -C, --categories [categories]  new categories for the entry
