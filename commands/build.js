@@ -60,23 +60,23 @@ const addCategoriesIndex = (dir, index, hash) =>
         .orElse(logReject('There was an error while trying to write categories index'))
 
 /**
- * addEntitiesIndex :: Path -> Index -> Boolean -> Task Error Path
+ * addEntitiesIndex :: Path -> Index -> String -> Boolean -> Task Error Path
  */
-const addEntitiesIndex = (dir, index, hash) =>
-    addDirectory(dir)
+const addEntitiesIndex = (dir, index, hash, subVersion) =>
+    addDirectory(dir, { override: !subVersion })
         .chain(() => addFile(join(dir, hash ? `index-${hash}.json` : 'index.json'), JSON.stringify(index)))
 
 /**
- * addEntitiesIndexes :: Path -> Indexes -> IndexManifest -> Task Error [[Path]]
+ * addEntitiesIndexes :: Path -> Indexes -> IndexManifest -> Boolean -> Task Error [[Path]]
  *
  * Indexes => { [IndexName]: Pages }
  * Pages   => { [Page]: Index }
  * IndexManifest => { [IndexName]: { [Page]: String } }
  */
-const addEntitiesIndexes = (dir, indexes, manifest) =>
+const addEntitiesIndexes = (dir, indexes, manifest, subVersion) =>
     mapTask(([category, pages]) =>
         mapTask(([page, index]) =>
-            addEntitiesIndex(join(dir, category, page), index, manifest[category][page]),
+            addEntitiesIndex(join(dir, category, page), index, manifest[category][page], subVersion),
         Object.entries(pages))
         .orElse(logReject(`There was an error while trying to write indexes of category '${category}'`)),
     Object.entries(indexes))
@@ -103,11 +103,11 @@ const addEntitiesIndexes = (dir, indexes, manifest) =>
  * }
  * IndexesResults => { remove: [Path], write: [Path] }
  */
-const setIndexesEndpoints = ({ cache, remove, write }, { distIndexes }, manifest) =>
+const setIndexesEndpoints = ({ cache, remove, write }, { distIndexes, subVersion }, manifest) =>
     isEmpty(remove) && isEmpty(write)
         ? Task.of({ remove: [], write: [] })
         : Task.of(write => remove => () => () => ({ remove, write }))
-            .apply(addEntitiesIndexes(distIndexes, write, manifest.indexes).map(flatten))
+            .apply(addEntitiesIndexes(distIndexes, write, manifest.indexes, subVersion).map(flatten))
             .apply(removeDirectories(remove))
             .apply(addCategoriesIndex(
                 distIndexes,
