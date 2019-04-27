@@ -27,6 +27,7 @@ const logReject = require('../lib/console/logReject')
 const map = require('../lib/lambda/map')
 const mapTask = require('../lib/lambda/mapTask')
 const mapValues = require('lodash/fp/mapValues')
+const Maybe = require('folktale/maybe')
 const merge = require('lodash/fp/merge')
 const paginate = require('../lib/paginate')
 const prop = require('lodash/fp/prop')
@@ -55,7 +56,7 @@ const addManifestEndpoint = (manifest, { distIndexes }) =>
  * addCategoriesIndex :: Path -> CategoriesIndex -> Task Error Path
  */
 const addCategoriesIndex = (dir, index, hash) =>
-    addFile(join(dir, hash ? `index-${hash}.json` : 'index.json'), JSON.stringify(index))
+    addFile(join(dir, hash.map(hash => `index-${hash}.json`).getOrElse('index.json')), JSON.stringify(index))
         .orElse(logReject('There was an error while trying to write categories index'))
 
 /**
@@ -63,7 +64,7 @@ const addCategoriesIndex = (dir, index, hash) =>
  */
 const addEntitiesIndex = (dir, index, hash, subVersion) =>
     addDirectory(dir, { override: !subVersion })
-        .chain(() => addFile(join(dir, hash ? `index-${hash}.json` : 'index.json'), JSON.stringify(index)))
+        .chain(() => addFile(join(dir, hash.map(hash => `index-${hash}.json`).getOrElse('index.json')), JSON.stringify(index)))
 
 /**
  * addEntitiesIndexes :: Path -> Indexes -> IndexManifest -> Boolean -> Task Error [[Path]]
@@ -75,7 +76,7 @@ const addEntitiesIndex = (dir, index, hash, subVersion) =>
 const addEntitiesIndexes = (dir, indexes, manifest, subVersion) =>
     mapTask(([category, pages]) =>
         mapTask(([page, index]) =>
-            addEntitiesIndex(join(dir, category, page), index, manifest[category][page], subVersion),
+            addEntitiesIndex(join(dir, category, page), index, manifest.map(prop(category)).map(prop(page)), subVersion),
         Object.entries(pages))
         .orElse(logReject(`There was an error while trying to write indexes of category '${category}'`)),
     Object.entries(indexes))
@@ -106,7 +107,7 @@ const setIndexesEndpoints = ({ cache, remove, write }, { distIndexes, subVersion
     isEmpty(remove) && isEmpty(write)
         ? Task.of({ remove: [], write: [] })
         : Task.of(write => remove => () => () => ({ remove, write }))
-            .apply(addEntitiesIndexes(distIndexes, write, manifest.indexes, subVersion).map(flatten))
+            .apply(addEntitiesIndexes(distIndexes, write, manifest.map(prop('indexes')), subVersion).map(flatten))
             .apply(removeDirectories(remove))
             .apply(addCategoriesIndex(
                 distIndexes,
@@ -114,7 +115,7 @@ const setIndexesEndpoints = ({ cache, remove, write }, { distIndexes, subVersion
                     ...categories,
                     [category]: 'all' === category ? 'All' : capitalize(category),
                 }), {}),
-                manifest.categories))
+                manifest.map(prop('categories'))))
             .apply(addFile(join(distIndexes, 'cache.json'), JSON.stringify(cache)))
 
 /**
@@ -167,7 +168,7 @@ const setEntitiesEndpoints = ({ add, remove, update }, { hash, subVersion }) =>
 const setEndpoints = ({ entries, indexes, manifest, options }) =>
     Task.of(entities => indexes => () => ({ entities, indexes }))
         .apply(setEntitiesEndpoints(entries, options).map(mapValues('length')))
-        .apply(setIndexesEndpoints(indexes, options, manifest).map(mapValues('length')))
+        .apply(setIndexesEndpoints(indexes, options, options.hash ? Maybe.Just(manifest) : Maybe.Nothing()).map(mapValues('length')))
         .apply(options.hash ? addManifestEndpoint(manifest, options) : Task.of({}))
 
 /**
