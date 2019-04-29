@@ -8,6 +8,7 @@ const addStaticDirs = require('../lib/entry/addStaticDirs')
 const capitalize = require('lodash/fp/capitalize')
 const categorize = require('../lib/categorize')
 const compose = require('lodash/fp/compose')
+const concat = require('../lib/collection/concat')
 const difference = require('lodash/fp/difference')
 const every = require('lodash/fp/every')
 const filterReducer = require('../lib/lambda/filterReducer')
@@ -25,6 +26,7 @@ const join = require('../lib/path/getJoinedPath')
 const log = require('../lib/console/log')
 const logReject = require('../lib/console/logReject')
 const map = require('../lib/lambda/map')
+const mapEntriesTask = require('../lib/collection/mapEntriesTask')
 const mapTask = require('../lib/lambda/mapTask')
 const mapValues = require('lodash/fp/mapValues')
 const Maybe = require('folktale/maybe')
@@ -39,7 +41,6 @@ const safeRequire = require('../lib/module/require')
 const setHash = require('../lib/entry/setHash')
 const sortBy = require('lodash/fp/sortBy')
 const setEntities = require('../lib/entry/setEntities')
-const setProp = require('../lib/collection/setProp')
 const setStaticDirs = require('../lib/entry/setStaticDirs')
 const setVersion = require('../lib/entry/setVersion')
 const Task = require('folktale/concurrency/task')
@@ -292,7 +293,7 @@ const reduceIndexes = write => (update, [category, pages]) => {
 
     // (6) Paginate
     let nextPages = paginate(nextEntities, { limit: update.options.entitiesPerPage, offset: firstPage })
-    const previousPages = transduce(filterReducer(([page]) => page < firstPage), setProp, {}, Object.entries(pages))
+    const previousPages = transduce(filterReducer(([page]) => page < firstPage), concat, {}, Object.entries(pages))
     const nextCache = { ...previousPages, ...nextPages }
     // Get previous pages indexes paths whose number is greater than the new pages count
     const remove = difference(Object.keys(pages), Object.keys(nextCache))
@@ -568,7 +569,7 @@ const build = options =>
         .chain(types => types.reduce(
             (build, type) => build
                 .and(buildType(type, options))
-                    .map(([results, result]) => result ? setProp(results, [type, result]) : results),
+                    .map(([results, result]) => result ? { ...results, [type]: result } : results),
             Task.of({})))
 
 module.exports = Object.assign(
