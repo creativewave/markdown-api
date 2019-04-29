@@ -534,16 +534,6 @@ const getEndpointsUpdate = compose(
  *    - Add/update/remove endpoints (based from 1)
  * 3. (Optional) Manifest
  *    - Add manifest (based from indexes cache in 2)
- *
- * Terminology:
- * - endpoint: a file in the distribution directory
- * - entity: the full contents of a resource (source entry)
- * - entity index: the partial contents used to describe a resource in indexes
- * - entity static files: the external contents of a resource
- * - entry: an object used as a unit of state of an entity existing either in
- *   the source or in the distribution directory
- * - indexes: a tree of paginated lists of entities indexes
- * - manifest: a tree of endpoints mapped to their hash
  */
 const build = options =>
     getDirectoryFilesNames(options.src).chain(types => types.reduce(
