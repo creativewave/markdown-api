@@ -1,19 +1,19 @@
 <svg width="256" height="82" viewBox="0 0 1000 318" xmlns="http://www.w3.org/2000/svg">
-    <style>
-        path:nth-of-type(2), path:nth-of-type(3) { fill: #fff }
-        path:nth-of-type(3) {
-          transform: translateY(-150%);
-          transform-origin: center;
-          animation: goDownStop 5s ease-out infinite;
-        }
-        path:last-of-type { fill: #73b6e6 }
-        @keyframes goDownStop {
-          8%, 92% { transform: translateY(0) }
-          100% { transform: translateY(200%) }
-        }
-    </style>
-    <path d="M963 0H37C17 0 0 17 0 37v244c0 20 17 37 37 37h926c21 0 37-17 37-37V37c0-20-17-37-37-37z"/>
-    <path d="M286 254h-64v-95l-47 61-48-61v95H64V64h63l48 63 47-63h64z"/>
-    <path d="M381 270l-79-111h47V64h64v95h48z"/>
-    <path d="M877 64h59v190h-59V64zM683 64h97c22 0 38 5 48 15 11 10 16 24 16 43s-5 34-17 45-29 16-53 16h-32v71h-59V64zm59 81h14c12 0 19-2 24-6s7-9 7-15-2-11-6-15c-4-5-12-7-23-7h-16v43zM593 223h-67l-9 31h-60l71-190h64l72 190h-62l-9-31zm-12-42l-21-68-21 68h42z"/>
+  <style>
+    path:nth-of-type(2), path:nth-of-type(3) { fill: #fff }
+    path:nth-of-type(3) {
+      transform: translateY(-150%);
+      transform-origin: center;
+      animation: goDownStop 5s ease-out infinite;
+    }
+    path:last-of-type { fill: #73b6e6 }
+    @keyframes goDownStop {
+      8%, 92% { transform: translateY(0) }
+      100% { transform: translateY(200%) }
+    }
+  </style>
+  <path d="M963 0H37C17 0 0 17 0 37v244c0 20 17 37 37 37h926c21 0 37-17 37-37V37c0-20-17-37-37-37z"/>
+  <path d="M286 254h-64v-95l-47 61-48-61v95H64V64h63l48 63 47-63h64z"/>
+  <path d="M381 270l-79-111h47V64h64v95h48z"/>
+  <path d="M877 64h59v190h-59V64zM683 64h97c22 0 38 5 48 15 11 10 16 24 16 43s-5 34-17 45-29 16-53 16h-32v71h-59V64zm59 81h14c12 0 19-2 24-6s7-9 7-15-2-11-6-15c-4-5-12-7-23-7h-16v43zM593 223h-67l-9 31h-60l71-190h64l72 190h-62l-9-31zm-12-42l-21-68-21 68h42z"/>
 </svg>
