@@ -1,17 +1,17 @@
 
 # Long term cache
 
-Long term caching of endpoints is adapted to static or server side sites with a moderate number of data entries, eg. blog posts, products, services, showcases, etc…
+Long term caching of endpoints is designed for static sites or server side rendered sites that use a moderate number of data entries, eg. blog posts, products, services, showcases, etc…
 
-It can be enabled by defining `options.hash`. When `true`, JSON endpoints files will be created using a content based hash in their filename.
+It is enabled using `options.hash`. When `true`, the endpoints JSON files will be created using a content based hash in their name.
 
-Activating the options will generate a `manifest.json` file to load on first page load, that contains a hash tree mapping each endpoint name to its hash. It's similar as the Webpack manifest, but its size should be watched as there might be a lot more API entries than JS/CSS/… files to load.
+It will also generate a `manifest.json` file to load on first page load, like a Webpack manifest. It contains a hash tree that maps each endpoint's name to its hash. However its size should be watched a lot more closely as there might be a lot more API entries than JS/CSS/… files to load with Webpack.
 
-When rendering server side, `api-endpoints.json` should either be:
+When rendering server side, the manifest must be either:
 
-- `require`d or `import`ed in the server `render.js` script, inlined as a global variable (eg. `window.__API__` or `window.__INITIAL_STATE__`) in the response, eventually loaded, managed, and read by a state management library (Redux, MobX, Angular, etc…), and cached client side using `sessionStorage`, `localStorage`, or `AppCache`
+- `require`d or `import`ed and inlined as a global variable (eg. `window.__API__`) in the HTML response, and then eventually handled by a state management library (Redux, MobX, Angular, etc…) and cached client side using `sessionStorage`, `localStorage`, or `AppCache`
 
-- `import`ed in the client app in a `service/api.js` module, and loaded either on page load or on demand, ie. using either `import` or `import()`, ie. by bundling it with other JS entries or with async (normal) chunks
+- `import`ed in a dedicated `service/api.js` module, which must be loaded itself by the client app either on page load or on demand, ie. using `import` or `import()`, bundled with other JS entries or with async (normal) chunks
 
 **Example using Redux:**
 
@@ -52,6 +52,6 @@ When rendering server side, `api-endpoints.json` should either be:
 
 ## Versioning
 
-If `options.subVersion` is also `true` and if the corresponding entry has been updated, the previous version of its endpoint will not be removed. This feature might be used to check differences between updates, like in a Github repository.
+If `options.hash` and `options.subVersion` are both `true`, stale endpoints will not be removed. This feature might be used to diff between updates, like in a Github repository.
 
 **Note:** you can also version control only source files, host them on Github, fetch diffs using its API, and render source/processed content client side.
