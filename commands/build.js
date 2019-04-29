@@ -233,7 +233,7 @@ const getManifestUpdate = update => ({
 const reduceIndexes = write => (update, [category, pages]) => {
 
     // (1) Get flattened `EntityIndex`es (entities for short)
-    const entities = flatten(Object.values(pages).map(prop('entities')))
+    const entities = Object.values(pages).flatMap(prop('entities'))
     // TODO: implement and check if the following works
     // Single iteration using toArray, ie. transduce(objectTransducer, push, [], arrayOfObjects):
     // const entities = toArray(mapReducer(prop('entities')), Object.values(pages))
@@ -483,7 +483,7 @@ const getEntriesUpdate = options =>
                     : Task.of(entries))
                 .map(([entries, opEntries]) => ({ ...entries, [op]: opEntries })),
             Task.of({}).orElse(logReject(`There was an error while getting '${options.type}' entities`))))
-        .chain(entries => isEmpty(flatten(Object.values(entries)))
+        .chain(entries => isEmpty(Object.values(entries).flat())
             ? Task.rejected(log('info', `There was no '${options.type}' to build`))
             : Task.of(entries))
         .map(entries => ({ entries, options }))
