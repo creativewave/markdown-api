@@ -3,13 +3,13 @@ workflows:
   version: 2
   test:
     jobs:
-      - test-nodejs-10
-      - test-nodejs-11
+      - test-nodejs-current
+      - test-nodejs-latest
 jobs:
-  test-nodejs-10: &test-template
+  test-nodejs-current: &test-template
     working_directory: ~/markdown-api
     docker:
-      - image: node:11.10.0-stretch
+      - image: node:current
     steps:
       - checkout
       - run:
@@ -31,7 +31,7 @@ jobs:
           path: test/results.xml
       - store_test_results:
           path: test/results.xml
-  test-nodejs-11:
+  test-nodejs-latest:
     <<: *test-template
     docker:
-      - image: node:10.15.2-stretch
+      - image: node:latest
