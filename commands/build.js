@@ -514,23 +514,6 @@ const getEndpointsUpdate = compose(
     getEntriesUpdate)
 
 /**
- * buildType :: EntityType -> Options -> Task Error Result
- *
- * Options => {
- *   dist: Path,
- *   entitiesPerPage: Number,
- *   force: Boolean,
- *   hash: Boolean,
- *   src: Path,
- *   subVersion: Boolean,
- * }
- */
-const buildType = (type, options) =>
-    getEndpointsUpdate({ ...options, distIndexes: join(options.dist, 'categories', type), type })
-        .chain(setEndpoints)
-        .orElse(() => Task.of()) // Nothing to build
-
-/**
  * build :: Options -> Task Error Results
  *
  * Options => {
@@ -565,12 +548,13 @@ const buildType = (type, options) =>
  * - manifest: a tree of endpoints mapped to their hash
  */
 const build = options =>
-    getDirectoryFilesNames(options.src)
-        .chain(types => types.reduce(
-            (build, type) => build
-                .and(buildType(type, options))
-                    .map(([results, result]) => result ? { ...results, [type]: result } : results),
-            Task.of({})))
+    getDirectoryFilesNames(options.src).chain(types => types.reduce(
+        (build, type) => build
+            .and(getEndpointsUpdate({ ...options, distIndexes: join(options.dist, 'categories', type), type })
+                .chain(setEndpoints)
+                .orElse(() => Task.of())) // Nothing to build
+                .map(([results, result]) => result ? { ...results, [type]: result } : results),
+        Task.of({})))
 
 module.exports = Object.assign(
     build, {
