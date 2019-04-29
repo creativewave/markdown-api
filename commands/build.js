@@ -456,37 +456,35 @@ const getEntriesUpdate = options =>
             old: getEntries(difference(src, add), options),
             remove: getEntries(difference(dist, src), options),
         }))
-        .chain(({ add, old, remove }) => Task.of(update => ({ add, remove, update }))
-            .apply(options.force
-                ? Task.of(old.map(entry => ({ ...entry, hasEntityUpdate: true, hasIndexUpdate: true, hasStaticDirUpdate: true })))
-                : getUpdatedEntries(old, options))
-            .orElse(logReject(`There was an error while getting updated '${options.type}'`)))
-        .chain(entries => Object.entries(entries).reduce(
-            (task, [op, entries]) => task
-                .and(['add', 'update'].includes(op)
-                    ? entries.reduce(
-                        (task, entry) => entry.hasIndexUpdate || entry.hasEntityUpdate
-                            ? task.and(getEntity(entry)).map(([entries, entity]) => {
-                                if (entity.draft) {
-                                    return entries
-                                }
-                                if (options.hash) {
-                                    if (options.version) {
-                                        return [...entries, setVersion(setHash({ ...entry, entity }))]
-                                    }
-                                    return [...entries, setHash({ ...entry, entity })]
-                                }
-                                return [...entries, { ...entry, entity }]
-                            })
-                            : Task.of(entries),
-                        Task.of([]))
-                    : Task.of(entries))
-                .map(([entries, opEntries]) => ({ ...entries, [op]: opEntries })),
-            Task.of({}).orElse(logReject(`There was an error while getting '${options.type}' entities`))))
+        .chain(({ add, old, remove }) => options.force
+            ? Task.of({ add, remove, update: old.map(entry => ({ ...entry, hasEntityUpdate: true, hasIndexUpdate: true, hasStaticDirUpdate: true })) })
+            : getUpdatedEntries(old, options)
+                .map(update => ({ add, remove, update }))
+                .orElse(logReject(`There was an error while getting updated '${options.type}'`)))
+        .chain(mapEntriesTask(([op, entries]) => {
+            if (op === 'remove') {
+                return Task.of([op, entries])
+            }
+            return entries.reduce(
+                (task, entry) => entry.hasIndexUpdate || entry.hasEntityUpdate
+                    ? task.and(getEntity(entry)).map(([[op, entries], entity]) => {
+                        if (entity.draft) {
+                            return [op, entries]
+                        }
+                        if (options.hash) {
+                            if (options.version) {
+                                return [op, entries.concat(setVersion(setHash({ ...entry, entity })))]
+                            }
+                            return [op, entries.concat(setHash({ ...entry, entity }))]
+                        }
+                        return [op, entries.concat({ ...entry, entity })]
+                    })
+                    : Task.of([op, entries]),
+                Task.of([op, []]).orElse(logReject(`There was an error while getting '${options.type}' entities`)))
+        }))
         .chain(entries => isEmpty(Object.values(entries).flat())
             ? Task.rejected(log('info', `There was no '${options.type}' to build`))
-            : Task.of(entries))
-        .map(entries => ({ entries, options }))
+            : Task.of({ entries, options }))
 
 /**
  * getEndpointsUpdate :: Options -> Task Error Update
