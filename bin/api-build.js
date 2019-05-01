@@ -14,7 +14,8 @@ const required = ['dist', 'src']
 /**
  * runBuild :: Options -> void
  *
- * TODO: invalidate if `options.hash === false && options.version === true`.
+ * TODO(fix): reject task if `options.hash` is `false` and `options.version` is
+ * `true`.
  */
 const runBuild = options => {
     console.time('API endpoints built in')

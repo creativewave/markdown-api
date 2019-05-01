@@ -401,7 +401,7 @@ const getIndexesToWrite = update =>
  * Memo: a single file caching the indexes tree is reduced to avoid reading each
  * `Index` (file) of each `Page` of each `IndexName`.
  *
- * TODO (refactoring): transduce write into update with indexes.
+ * TODO(refactoring): transduce write into update with indexes.
  */
 const getIndexesUpdate = (update, write = getIndexesToWrite(update)) =>
     Object.keys(write).reduce(
@@ -438,12 +438,12 @@ const getIndexesUpdate = (update, write = getIndexesToWrite(update)) =>
  * Update => { entries: EntriesUpdate, Options }
  * EntriesUpdate => { add: [Entry], remove: [Entry], update: [Entry] }
  *
- * TODO (feature: use `slug` for endpoint path): think if this feature should be
+ * TODO(feature: use `slug` for endpoint path): think if this feature should be
  * removed or not, as each source entry `index.js` would need to be read to get
  * its `slug` and if different than its directory name, diff it against entries
  * names from the distribution directory.
  *
- * TODO (refactoring): transduce entries names into update with entries update.
+ * TODO(refactoring): transduce entries names into update with entries update.
  */
 const getEntriesUpdate = options =>
     getDirectoriesFilesNames([join(options.src, options.type), join(options.dist, options.type)])
