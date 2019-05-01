@@ -3,7 +3,9 @@
   "description": "Command line interface to build and manage (JSON) API endpoints from JS and markdown source files.",
   "author": "Guillaume Lebas",
   "license": "MIT",
-  "keywords": ["markdown"],
+  "keywords": [
+    "markdown"
+  ],
   "version": "0.2.3",
   "homepage": "https://github.com/creativewave/markdown-api",
   "bugs": "https://github.com/creativewave/markdown-api/issues",
@@ -31,7 +33,7 @@
     "test:watch": "mocha -w -R min"
   },
   "dependencies": {
-    "commander": "^2.18.0",
+    "commander": "^2.20.0",
     "folktale": "^2.3.2",
     "highlightjs": "^9.12.0",
     "imagemin": "^6.1.0",
@@ -41,9 +43,9 @@
     "watchpack": "^1.6.0"
   },
   "devDependencies": {
-    "eslint": "^5.14.1",
+    "eslint": "^5.16.0",
     "mocha": "^5.2.0",
     "mocha-clean": "^1.0.0",
-    "mocha-junit-reporter": "^1.18.0"
+    "mocha-junit-reporter": "^1.22.0"
   }
 }
