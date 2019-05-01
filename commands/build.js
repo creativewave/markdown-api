@@ -19,7 +19,6 @@ const getDirectoryFilesNames = require('../lib/fs/getDirectoryFilesNames')
 const getEntity = require('../lib/entry/getEntity')
 const getEntries = require('../lib/entry/getEntries')
 const getHash = require('../lib/string/getHash')
-const getProp = require('../lib/collection/getProp')
 const getUpdatedEntries = require('../lib/entry/getUpdatedEntries')
 const isEmpty = require('lodash/fp/isEmpty')
 const join = require('../lib/path/getJoinedPath')
@@ -37,6 +36,7 @@ const removeDirectories = require('../lib/fs/removeDirectories')
 const removeDists = require('../lib/entry/removeDists')
 const removeStaticDirs = require('../lib/entry/removeStaticDirs')
 const Result = require('folktale/result')
+const safeProp = require('../lib/collection/safeProp')
 const safeRequire = require('../lib/module/require')
 const setHash = require('../lib/entry/setHash')
 const sortBy = require('lodash/fp/sortBy')
@@ -244,10 +244,10 @@ const reduceIndexes = write => (update, [category, pages]) => {
             // Does it have an entity whose its source entry has been removed?
             update.entries.remove.find(remove => remove.name === entity.name)
             // Or does it have an entity only removed from this category?
-            || ('all' !== category && getProp('all', write)
+            || ('all' !== category && safeProp('all', write)
                 .map(find(next => next.name === entity.name && !next.categories.includes(category)))
                 .getOrElse(false))),
-        write: getProp(category, write).chain(getProp(0))
+        write: safeProp(category, write).chain(safeProp(0))
             .map(first => entities.findIndex(entity => entity.date > first.date || entity.name === first.name))
             .getOrElse(-1),
     }
@@ -269,7 +269,7 @@ const reduceIndexes = write => (update, [category, pages]) => {
     if (-1 < firstEntityIndex.remove) {
         nextEntities = nextEntities.filter(entity =>
             update.entries.remove.every(remove => remove.name !== entity.name)
-            && ('all' === category || getProp('all', write)
+            && ('all' === category || safeProp('all', write)
                 .map(every(next => next.name !== entity.name || next.categories.includes(category)))
                 .getOrElse(true)))
     }
@@ -300,7 +300,7 @@ const reduceIndexes = write => (update, [category, pages]) => {
         .map(page => join(update.options.distIndexes, category, page))
 
     // (7) Diff `nextPages` against `cache` (previous pages) to remove untouched pages
-    // TODO: use `getProp` to read pages[page].entities[idx].name and write[category]
+    // TODO: use `safeProp` to read pages[page].entities[idx].name and write[category]
     // TODO: try to abstract a curried `isStaleEntityIndex` receiving cache and write Maybes
     nextPages = Object.entries(nextPages).reduce(
         (finalNextPages, [page, index]) =>
