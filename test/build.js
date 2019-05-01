@@ -168,9 +168,6 @@ describe('build#getEndpointsUpdate()', () => {
     it('rejects task when source directory is missing', () =>
         expectRejects({ dist: 'empty', src: 'missing' }))
 
-    it('rejects task when distribution directory is missing', () =>
-        expectRejects({ dist: 'missing', src: 'empty' }))
-
     it('rejects task when a source entry is missing a content file', () =>
         Promise.all([
             expectRejects({ dist: 'empty', src: 'missing-content' }), // New source
@@ -179,12 +176,6 @@ describe('build#getEndpointsUpdate()', () => {
 
     it('rejects task when there is only a single entry to add which is a draft', () =>
         expectRejects({ dist: 'empty', src: 'single-draft' }))
-
-    it('rejects task when a distribution entry is missing en entity', () =>
-        expectRejects({ dist: 'missing-entity', src: 'single' }))
-
-    it('rejects task when a distribution entry is missing a static files directory', () =>
-        expectRejects({ dist: 'missing-static-dir', src: 'single' }))
 
     it('rejects task when there is no entry to add, update, or remove', () =>
         expectRejects({ dist: 'empty', src: 'empty' }))

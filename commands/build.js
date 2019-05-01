@@ -1,5 +1,6 @@
 
 const addDirectory = require('../lib/fs/addDirectory')
+const addDirectoryFromError = require('../lib/fs/addDirectoryFromError')
 const addDist = require('../lib/entry/addDist')
 const addEntities = require('../lib/entry/addEntities')
 const addEntity = require('../lib/entry/addEntity')
@@ -341,14 +342,10 @@ const reduceIndexesUpdate = (update, cache, write) =>
  * Indexes => { [IndexName]: Pages }
  * Pages => { [Page]: Index }
  * Index => { entities: [EntityIndex], hash?: String, prev: Path, next: Path }
- *
- * TODO (fix missing indexes directory): it should return a rejected task and
- * log an error when `/dist/api/categories` is missing, or ideally, it should
- * recover from the error returned by `safeRequire` by creating this directory
- * and returning an empty cache, ie. `.orElse(recoverError)`.
  */
-const getIndexesCache = ({ distIndexes, force }) =>
-    force ? Result.of({}) : safeRequire(join(distIndexes, 'cache.json'))
+const getIndexesCache = ({ distIndexes, force }) => force
+    ? Result.of({})
+    : safeRequire(join(distIndexes, 'cache.json'))
 
 /**
  * getIndexesToWrite :: Update -> { IndexName: [EntityIndex] }
@@ -450,7 +447,8 @@ const getIndexesUpdate = (update, write = getIndexesToWrite(update)) =>
  */
 const getEntriesUpdate = options =>
     getDirectoriesFilesNames([join(options.src, options.type), join(options.dist, options.type)])
-        .orElse(logReject(`There was an error while reading '${options.type}'`))
+        .orElse(addDirectoryFromError)
+        .orElse(logReject(`There was an error while reading '${options.type}' entries`))
         .map(([src, dist], add = difference(src, dist)) => ({
             add: getEntries(add, options).map(entry => ({ ...entry, hasEntityUpdate: true, hasIndexUpdate: true })),
             old: getEntries(difference(src, add), options),
@@ -536,13 +534,18 @@ const getEndpointsUpdate = compose(
  *    - Add manifest (based from indexes cache in 2)
  */
 const build = options =>
-    getDirectoryFilesNames(options.src).chain(types => types.reduce(
-        (build, type) => build
-            .and(getEndpointsUpdate({ ...options, distIndexes: join(options.dist, 'categories', type), type })
-                .chain(setEndpoints)
-                .orElse(() => Task.of())) // Nothing to build
-                .map(([results, result]) => result ? { ...results, [type]: result } : results),
-        Task.of({})))
+    getDirectoryFilesNames(options.src)
+        .orElse(logReject(`There was an error while reading entries types from path '${options.src}'`))
+        .chain(types => isEmpty(types)
+            ? Task.rejected(log('error', `There was no entries type directory in ${options.src}`))
+            : Task.of(types))
+        .chain(types => types.reduce(
+            (build, type) => build
+                .and(getEndpointsUpdate({ ...options, distIndexes: join(options.dist, 'categories', type), type })
+                    .chain(setEndpoints)
+                    .orElse(() => Task.of())) // Nothing to build
+                    .map(([results, result]) => result ? { ...results, [type]: result } : results),
+            Task.of({})))
 
 module.exports = Object.assign(
     build, {
