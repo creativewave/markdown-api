@@ -1,11 +1,11 @@
 /* eslint-disable no-console */
 
 const cli = require('commander')
-const config = require('./lib/config')
-const log = require('./lib/console/log')
-const logReject = require('./lib/console/logReject')
-const remove = require('./commands/remove.js')
-const validate = require('./lib/config/validate')
+const config = require('../lib/config')
+const log = require('../lib/console/log')
+const logReject = require('../lib/console/logReject')
+const remove = require('../commands/remove.js')
+const validate = require('../lib/config/validate')
 
 const required = ['dist', 'name', 'src', 'type']
 

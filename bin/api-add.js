@@ -1,13 +1,13 @@
 /* eslint-disable no-console */
 
-const add = require('./commands/add.js')
+const add = require('../commands/add.js')
 const cli = require('commander')
-const config = require('./lib/config')
-const getOptions = require('./lib/config/getOptions')
-const log = require('./lib/console/log')
-const logReject = require('./lib/console/logReject')
+const config = require('../lib/config')
+const getOptions = require('../lib/config/getOptions')
+const log = require('../lib/console/log')
+const logReject = require('../lib/console/logReject')
 const split = require('lodash/fp/split')
-const validate = require('./lib/config/validate')
+const validate = require('../lib/config/validate')
 
 const included = ['categories', 'content', 'date', 'excerpt', 'src', 'title', 'type']
 const required = ['src', 'title', 'type']

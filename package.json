@@ -9,7 +9,7 @@
   "bugs": "https://github.com/creativewave/markdown-api/issues",
   "repository": "github:creativewave/markdown-api",
   "bin": {
-    "api": "./api.js"
+    "api": "./bin/api.js"
   },
   "directories": {
     "doc": "doc",
@@ -17,14 +17,9 @@
     "test": "test"
   },
   "files": [
+    "bin",
     "commands",
     "lib",
-    "api.js",
-    "api-add.js",
-    "api-build.js",
-    "api-remove.js",
-    "api-set.js",
-    "api-stats.js",
     "index.js"
   ],
   "main": "index.js",
