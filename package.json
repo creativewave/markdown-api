@@ -28,9 +28,10 @@
   "scripts": {
     "lint": "eslint .",
     "prepublishOnly": "npm run lint && npm run test",
-    "test": "mocha",
-    "test:report": "mocha -R mocha-junit-reporter --reporter-options mochaFile=test/results.xml",
-    "test:watch": "mocha -w -R min"
+    "test": "jest",
+    "test:inspect": "node --inspect=0.0.0.0:9222 ./node_modules/.bin/jest --watchAll -b",
+    "test:report": "jest -i --reporters='jest-junit'",
+    "test:watch": "jest --watchAll -b"
   },
   "dependencies": {
     "commander": "^2.20.0",
@@ -45,8 +46,7 @@
   "devDependencies": {
     "@cdoublev/eslint-config": "^0.2.0",
     "eslint": "^5.16.0",
-    "mocha": "^5.2.0",
-    "mocha-clean": "^1.0.0",
-    "mocha-junit-reporter": "^1.22.0"
+    "jest": "^24.9.0",
+    "jest-junit": "^10.0.0"
   }
 }

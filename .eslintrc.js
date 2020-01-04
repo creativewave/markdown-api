@@ -1,5 +1,5 @@
 
 module.exports = {
-    env: { mocha: true },
+    env: { jest: true },
     extends: ['@cdoublev/eslint-config/node'],
 }
