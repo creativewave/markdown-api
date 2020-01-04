@@ -492,7 +492,7 @@ const getEntriesUpdate = config =>
                         return [op, entries.concat({ ...entry, entity })]
                     })
                     : Task.of([op, entries]),
-                Task.of([op, []]).orElse(logReject(`There was an error while getting '${config.type}' entities`)))
+                Task.of([op, []])).orElse(logReject(`There was an error while getting '${config.type}' entities`))
         }))
         .chain(entries => isEmpty(Object.values(entries).flat())
             ? Task.rejected(log('info', `There was no '${config.type}' to build`))
