@@ -43,6 +43,7 @@
     "watchpack": "^1.6.0"
   },
   "devDependencies": {
+    "@cdoublev/eslint-config": "^0.2.0",
     "eslint": "^5.16.0",
     "mocha": "^5.2.0",
     "mocha-clean": "^1.0.0",
