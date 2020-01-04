@@ -84,11 +84,11 @@ const addEntitiesIndexes = (dir, indexes, manifest, subVersion) =>
     Object.entries(indexes))
 
 /**
- * setIndexesEndpoints :: IndexesUpdate -> Options -> Manifest -> Task Error IndexesResults
+ * setIndexesEndpoints :: IndexesUpdate -> Configuration -> Manifest -> Task Error IndexesResults
  *
  * IndexesUpdate => { cache: Indexes, remove: [Path], write: Indexes }
  * Indexes => { [IndexName]: Pages }
- * Options => {
+ * Configuration => {
  *   dist: Path,
  *   distIndexes: Path,
  *   entitiesPerPage: Number,
@@ -121,10 +121,10 @@ const setIndexesEndpoints = ({ cache, remove, write }, { distIndexes, subVersion
             .apply(addFile(join(distIndexes, 'cache.json'), JSON.stringify(cache)))
 
 /**
- * setEntitiesEndpoints :: EntriesUpdate -> Options -> Task Error EntitiesResults
+ * setEntitiesEndpoints :: EntriesUpdate -> Configuration -> Task Error EntitiesResults
  *
  * EntriesUpdate => { add: [Entry], remove: [Entry], update: [Entry] }
- * Options => {
+ * Configuration => {
  *   dist: Path,
  *   distIndexes: Path,
  *   entitiesPerPage: Number,
@@ -153,10 +153,10 @@ const setEntitiesEndpoints = ({ add, remove, update }, { hash, subVersion }) =>
  * setEndpoints :: Update -> Task Error Result
  *
  * Update => {
+ *   config: Configuration,
  *   entries: EntriesUpdate,
  *   indexes: IndexesUpdate,
  *   manifest: Manifest,
- *   options: Options,
  * }
  * Result => { entities: EntitiesResults, indexes: IndexesResults }
  * EntitiesResults => {
@@ -170,16 +170,16 @@ const setEntitiesEndpoints = ({ add, remove, update }, { hash, subVersion }) =>
  * It should run the file system operations described in the given `Update` to
  * build endpoints from the corresponding resource type.
  */
-const setEndpoints = ({ entries, indexes, manifest, options }) =>
+const setEndpoints = ({ entries, indexes, manifest, config }) =>
     Task.of(entities => indexes => () => ({ entities, indexes }))
-        .apply(setEntitiesEndpoints(entries, options).map(mapValues('length')))
-        .apply(setIndexesEndpoints(indexes, options, options.hash ? Maybe.Just(manifest) : Maybe.Nothing()).map(mapValues('length')))
-        .apply(options.hash ? addManifestEndpoint(manifest, options) : Task.of({}))
+        .apply(setEntitiesEndpoints(entries, config).map(mapValues('length')))
+        .apply(setIndexesEndpoints(indexes, config, config.hash ? Maybe.Just(manifest) : Maybe.Nothing()).map(mapValues('length')))
+        .apply(config.hash ? addManifestEndpoint(manifest, config) : Task.of({}))
 
 /**
  * getManifestUpdate :: Update -> Update
  *
- * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, manifest: Manifest, options: Options }
+ * Update => { config: Configuration, entries: EntriesUpdate, indexes: IndexesUpdate, manifest: Manifest }
  * IndexesUpdate => { cache: Indexes, remove: [Path], write: Indexes }
  * Indexes => { [IndexName]: Pages }
  * Pages => { [Page]: Index }
@@ -215,7 +215,7 @@ const getManifestUpdate = update => ({
 /**
  * reduceIndexes :: { [IndexName]: [EntityIndex] } -> Update -> [IndexName, { Page: Index }] -> Update
  *
- * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, options: Options }
+ * Update => { config: Configuration, entries: EntriesUpdate, indexes: IndexesUpdate }
  * IndexesUpdate => { cache: Indexes, remove: [Path], write: Indexes }
  * Indexes => { [IndexName]: Pages }
  * Pages => { [Page]: Index }
@@ -264,8 +264,8 @@ const reduceIndexes = write => (update, [category, pages]) => {
     const firstEntityIndexUpdate = -1 < firstEntityIndex.write || -1 < firstEntityIndex.remove
         ? -1 < firstEntityIndex.write ? firstEntityIndex.write : firstEntityIndex.remove
         : Math.min(firstEntityIndex.write, firstEntityIndex.remove)
-    const firstPage = Math.ceil(firstEntityIndexUpdate / update.options.entitiesPerPage)
-    let nextEntities = entities.slice((firstPage - 1) * update.options.entitiesPerPage)
+    const firstPage = Math.ceil(firstEntityIndexUpdate / update.config.entitiesPerPage)
+    let nextEntities = entities.slice((firstPage - 1) * update.config.entitiesPerPage)
 
     // (3) Filter removed entities
     if (-1 < firstEntityIndex.remove) {
@@ -285,7 +285,7 @@ const reduceIndexes = write => (update, [category, pages]) => {
 
     // Remove category if it has no more entries after (3) and (4).
     if (0 === nextEntities.length) {
-        update.indexes.remove.push(join(update.options.distIndexes, category))
+        update.indexes.remove.push(join(update.config.distIndexes, category))
         delete update.indexes.cache[category]
         return update
     }
@@ -294,12 +294,12 @@ const reduceIndexes = write => (update, [category, pages]) => {
     nextEntities = sortBy('date', nextEntities)
 
     // (6) Paginate
-    let nextPages = paginate(nextEntities, { limit: update.options.entitiesPerPage, offset: firstPage })
+    let nextPages = paginate(nextEntities, { limit: update.config.entitiesPerPage, offset: firstPage })
     const previousPages = transduce(filterReducer(([page]) => page < firstPage), concat, {}, Object.entries(pages))
     const nextCache = { ...previousPages, ...nextPages }
     // Get previous pages indexes paths whose number is greater than the new pages count
     const remove = difference(Object.keys(pages), Object.keys(nextCache))
-        .map(page => join(update.options.distIndexes, category, page))
+        .map(page => join(update.config.distIndexes, category, page))
 
     // (7) Diff `nextPages` against `cache` (previous pages) to remove untouched pages
     // TODO: use `safeProp` to read pages[page].entities[idx].name and write[category]
@@ -328,9 +328,9 @@ const reduceIndexesUpdate = (update, cache, write) =>
     Object.entries(cache).reduce(reduceIndexes(write), { ...update, indexes: { cache: {}, remove: [], write: {} } })
 
 /**
- * getIndexesCache :: Options -> Result Error Indexes
+ * getIndexesCache :: Configuration -> Result Error Indexes
  *
- * Options => {
+ * Configuration => {
  *   dist: Path,
  *   distIndexes: Path,
  *   entitiesPerPage: Number,
@@ -351,13 +351,13 @@ const getIndexesCache = ({ distIndexes, force }) => force
 /**
  * getIndexesToWrite :: Update -> { IndexName: [EntityIndex] }
  *
- * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, options: Options }
+ * Update => { config: Configuration, entries: EntriesUpdate, indexes: IndexesUpdate }
  * EntriesUpdate => { add: [Entry], remove: [Entry], update: [Entry] }
  * Entry => { ...Entry, Entity }
  *
  * It should filter out `Update.entries.remove`.
  * It should filter in `Update.entries.update` with `.hasIndexUpdate` or if
- * `Update.options.force`.
+ * `Update.config.force`.
  */
 const getIndexesToWrite = update =>
     categorize(sortBy('date', Object.entries(update.entries).reduce(
@@ -365,7 +365,7 @@ const getIndexesToWrite = update =>
             if ('remove' === op) {
                 return indexes
             }
-            if ('add' === op || update.options.force) {
+            if ('add' === op || update.config.force) {
                 return [
                     ...indexes,
                     // eslint-disable-next-line no-unused-vars
@@ -386,7 +386,7 @@ const getIndexesToWrite = update =>
 /**
  * getIndexesUpdate :: Update -> Update
  *
- * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, options: Options }
+ * Update => { config: Configuration, entries: EntriesUpdate, indexes: IndexesUpdate }
  * IndexesUpdate => { cache: Indexes, remove: [Path], write: Indexes }
  * Indexes => { [IndexName]: Pages }
  *
@@ -415,22 +415,22 @@ const getIndexesUpdate = (update, write = getIndexesToWrite(update)) =>
                 update.indexes.cache[category] = paginate(
                     write[category],
                     {
-                        hash: update.options.hash,
-                        limit: update.options.entitiesPerPage,
+                        hash: update.config.hash,
+                        limit: update.config.entitiesPerPage,
                     },
                 )
                 update.indexes.write[category] = update.indexes.cache[category]
             }
             return update
         },
-        getIndexesCache(update.options)
+        getIndexesCache(update.config)
             .map(cache => reduceIndexesUpdate(update, cache, write))
             .getOrElse({ ...update, indexes: { cache: {}, remove: [], write: {} } }))
 
 /**
- * getEntriesUpdate :: Options -> Task Error Update
+ * getEntriesUpdate :: Configuration -> Task Error Update
  *
- * Options => {
+ * Configuration => {
  *   dist: Path,
  *   distIndexes: Path,
  *   entitiesPerPage: Number,
@@ -440,7 +440,7 @@ const getIndexesUpdate = (update, write = getIndexesToWrite(update)) =>
  *   subVersion: Boolean,
  *   type: EntityType,
  * }
- * Update => { entries: EntriesUpdate, options: Options }
+ * Update => { config: Configuration, entries: EntriesUpdate }
  * EntriesUpdate => { add: [Entry], remove: [Entry], update: [Entry] }
  *
  * TODO(feature: use `slug` for endpoint path): think if this feature should be
@@ -450,16 +450,16 @@ const getIndexesUpdate = (update, write = getIndexesToWrite(update)) =>
  *
  * TODO(refactoring): transduce entries names into update with entries update.
  */
-const getEntriesUpdate = options =>
-    getDirectoriesFilesNames([join(options.src, options.type), join(options.dist, options.type)])
+const getEntriesUpdate = config =>
+    getDirectoriesFilesNames([join(config.src, config.type), join(config.dist, config.type)])
         .orElse(addDirectoryFromError)
-        .orElse(logReject(`There was an error while reading '${options.type}' entries`))
+        .orElse(logReject(`There was an error while reading '${config.type}' entries`))
         .map(([src, dist], add = difference(src, dist)) => ({
-            add: getEntries(add, options).map(entry => ({ ...entry, hasEntityUpdate: true, hasIndexUpdate: true })),
-            old: getEntries(difference(src, add), options),
-            remove: getEntries(difference(dist, src), options),
+            add: getEntries(add, config).map(entry => ({ ...entry, hasEntityUpdate: true, hasIndexUpdate: true })),
+            old: getEntries(difference(src, add), config),
+            remove: getEntries(difference(dist, src), config),
         }))
-        .chain(({ add, old, remove }) => options.force
+        .chain(({ add, old, remove }) => config.force
             ? Task.of({
                 add,
                 remove,
@@ -470,9 +470,9 @@ const getEntriesUpdate = options =>
                     hasStaticDirUpdate: true,
                 })),
             })
-            : getUpdatedEntries(old, options)
+            : getUpdatedEntries(old, config)
                 .map(update => ({ add, remove, update }))
-                .orElse(logReject(`There was an error while getting updated '${options.type}'`)))
+                .orElse(logReject(`There was an error while getting updated '${config.type}'`)))
         .chain(mapEntriesTask(([op, entries]) => {
             if (op === 'remove') {
                 return Task.of([op, entries])
@@ -483,8 +483,8 @@ const getEntriesUpdate = options =>
                         if (entity.draft) {
                             return [op, entries]
                         }
-                        if (options.hash) {
-                            if (options.version) {
+                        if (config.hash) {
+                            if (config.version) {
                                 return [op, entries.concat(setVersion(setHash({ ...entry, entity })))]
                             }
                             return [op, entries.concat(setHash({ ...entry, entity }))]
@@ -492,16 +492,16 @@ const getEntriesUpdate = options =>
                         return [op, entries.concat({ ...entry, entity })]
                     })
                     : Task.of([op, entries]),
-                Task.of([op, []]).orElse(logReject(`There was an error while getting '${options.type}' entities`)))
+                Task.of([op, []]).orElse(logReject(`There was an error while getting '${config.type}' entities`)))
         }))
         .chain(entries => isEmpty(Object.values(entries).flat())
-            ? Task.rejected(log('info', `There was no '${options.type}' to build`))
-            : Task.of({ entries, options }))
+            ? Task.rejected(log('info', `There was no '${config.type}' to build`))
+            : Task.of({ config, entries }))
 
 /**
- * getEndpointsUpdate :: Options -> Task Error Update
+ * getEndpointsUpdate :: Configuration -> Task Error Update
  *
- * Options => {
+ * Configuration => {
  *   dist: Path,
  *   distIndexes: Path,
  *   entitiesPerPage: Number,
@@ -512,10 +512,10 @@ const getEntriesUpdate = options =>
  *   type: EntityType,
  * }
  * Update => {
+ *   config: Configuration,
  *   entries: EntriesUpdate,
  *   indexes: IndexesUpdate,
  *   manifest: Manifest,
- *   options: Options,
  * }
  *
  * It should return an `Update` that describes file system operations that have
@@ -525,14 +525,14 @@ const getEntriesUpdate = options =>
  * - the configuration to build those endpoints
  */
 const getEndpointsUpdate = compose(
-    map(update => update.options.hash ? getManifestUpdate(update) : update),
+    map(update => update.config.hash ? getManifestUpdate(update) : update),
     map(getIndexesUpdate),
     getEntriesUpdate)
 
 /**
- * build :: Options -> Task Error Results
+ * build :: Configuration -> Task Error Results
  *
- * Options => {
+ * Configuration => {
  *   dist: Path,
  *   entitiesPerPage: Number,
  *   force: Boolean,
@@ -553,15 +553,15 @@ const getEndpointsUpdate = compose(
  * 3. (Optional) Manifest
  *    - Add manifest (based from indexes cache in 2)
  */
-const build = options =>
-    getDirectoryFilesNames(options.src)
-        .orElse(logReject(`There was an error while reading entries types from path '${options.src}'`))
+const build = config =>
+    getDirectoryFilesNames(config.src)
+        .orElse(logReject(`There was an error while reading entries types from path '${config.src}'`))
         .chain(types => isEmpty(types)
-            ? Task.rejected(log('error', `There was no entries type directory in ${options.src}`))
+            ? Task.rejected(log('error', `There was no entries type directory in ${config.src}`))
             : Task.of(types))
         .chain(types => types.reduce(
             (build, type) => build
-                .and(getEndpointsUpdate({ ...options, distIndexes: join(options.dist, 'categories', type), type })
+                .and(getEndpointsUpdate({ ...config, distIndexes: join(config.dist, 'categories', type), type })
                     .chain(setEndpoints)
                     .orElse(() => Task.of())) // Nothing to build
                     .map(([results, result]) => result ? { ...results, [type]: result } : results),

@@ -1,7 +1,7 @@
 
 const cli = require('commander')
 const config = require('../lib/config')
-const getOptions = require('../lib/config/getOptions')
+const getConfig = require('../lib/config/get')
 const log = require('../lib/console/log')
 const logReject = require('../lib/console/logReject')
 const set = require('../commands/set.js')
@@ -12,16 +12,16 @@ const included = ['categories', 'content', 'date', 'excerpt', 'name', 'src', 'ti
 const required = ['name', 'src', 'type']
 
 /**
- * runSet :: Options -> void
+ * runSet :: Configuration -> void
  */
-const runSet = options => {
+const runSet = config => {
     console.time('API source set in')
-    validate(required, options)
+    validate(required, config)
         .orElse(logReject('Invalid parameter'))
-        .map(getOptions(included))
+        .map(getConfig(included))
         .chain(set)
         .map(() => {
-            log(`The entry "${options.name}" has been successfully updated`)
+            log(`The entry "${config.name}" has been successfully updated`)
             console.timeEnd('API source set in')
         })
         .run()

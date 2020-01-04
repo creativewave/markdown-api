@@ -3,7 +3,7 @@
 
 Long term caching of endpoints is designed for static sites or server side rendered sites that use a moderate number of data entries, eg. blog posts, products, services, showcases, etc…
 
-It is enabled using `options.hash`. When `true`, the endpoints JSON files will be created using a content based hash in their name.
+It is enabled using `config.hash`. When `true`, the endpoints JSON files will be created using a content based hash in their name.
 
 It will also generate a `manifest.json` file to load on first page load, like a Webpack manifest. It contains a hash tree that maps each endpoint's name to its hash. However its size should be watched a lot more closely as there might be a lot more API entries than JS/CSS/… files to load with Webpack.
 
@@ -52,6 +52,6 @@ When rendering server side, the manifest must be either:
 
 ## Versioning
 
-If `options.hash` and `options.subVersion` are both `true`, stale endpoints will not be removed. This feature might be used to diff between updates, like in a Github repository.
+If `config.hash` and `config.subVersion` are both `true`, stale endpoints will not be removed. This feature might be used to diff between updates, like in a Github repository.
 
 **Note:** you can also version control only source files, host them on Github, fetch diffs using its API, and render source/processed content client side.

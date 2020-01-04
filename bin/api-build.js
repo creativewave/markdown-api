@@ -2,7 +2,7 @@
 const build = require('../commands/build.js')
 const cli = require('commander')
 const config = require('../lib/config')
-const getOptions = require('../lib/config/getOptions')
+const getConfig = require('../lib/config/get')
 const logReject = require('../lib/console/logReject')
 const validate = require('../lib/config/validate')
 const Watcher = require('watchpack')
@@ -11,16 +11,16 @@ const included = ['dist', 'entitiesPerPage', 'force', 'hash', 'src', /*'type',*/
 const required = ['dist', 'src']
 
 /**
- * runBuild :: Options -> void
+ * runBuild :: Configuration -> void
  *
- * TODO(fix): reject task if `options.hash` is `false` and `options.version` is
+ * TODO(fix): reject task if `config.hash` is `false` and `config.version` is
  * `true`.
  */
-const runBuild = options => {
+const runBuild = config => {
     console.time('API endpoints built in')
-    validate(required, options)
+    validate(required, config) 
         .orElse(logReject('Invalid parameter'))
-        .map(getOptions(included))
+        .map(getConfig(included))
         .chain(build)
         .map(results => Object.entries(results).map(([type, { entities, indexes }]) => {
             console.group(type)
@@ -50,8 +50,8 @@ cli
     .option('-h, --hash', 'create endpoints using hashes for long term cache', config.hash)
     .option('-S, --subVersion', 'keep previous generated (JSON) endpoints', config.subVersion)
     .option('-w, --watch', 'automatically build on change', config.watch)
-    .action(options => {
-        options.watch && runWatcher(options.src, () => runBuild(options))
-        runBuild(options)
+    .action(config => {
+        config.watch && runWatcher(config.src, () => runBuild(config))
+        runBuild(config)
     })
     .parse(process.argv)

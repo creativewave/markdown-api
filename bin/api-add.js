@@ -2,7 +2,7 @@
 const add = require('../commands/add.js')
 const cli = require('commander')
 const config = require('../lib/config')
-const getOptions = require('../lib/config/getOptions')
+const getConfig = require('../lib/config/get')
 const log = require('../lib/console/log')
 const logReject = require('../lib/console/logReject')
 const split = require('lodash/fp/split')
@@ -12,16 +12,16 @@ const included = ['categories', 'content', 'date', 'excerpt', 'src', 'title', 't
 const required = ['src', 'title', 'type']
 
 /**
- * runAdd :: Options -> void
+ * runAdd :: Configuration -> void
  */
-const runAdd = options => {
+const runAdd = config => {
     console.time('API entry created in')
-    validate(required, options)
+    validate(required, config)
         .orElse(logReject('Invalid parameter'))
-        .map(getOptions(included))
+        .map(getConfig(included))
         .chain(add)
         .map(() => {
-            log(`"${options.title}" has been successfully added to ${options.type} entries`)
+            log(`"${config.title}" has been successfully added to ${config.type} entries`)
             console.timeEnd('API entry created in')
         })
         .run()

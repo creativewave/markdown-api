@@ -6,7 +6,7 @@ const slugify = require('../lib/slugify')
 const toCompact = require('../lib/collection/toCompact')
 
 /**
- * set :: Options -> Task Error Results
+ * set :: Configuration -> Task Error Results
  */
 const set = ({ name, src, type, ...entity }, slug = slugify(entity.title)) =>
     setEntry({ entity: { ...toCompact(entity), slug }, ...getEntry(name, { src, type }) })

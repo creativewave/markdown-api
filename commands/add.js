@@ -5,7 +5,7 @@ const logReject = require('../lib/console/logReject')
 const slugify = require('../lib/slugify')
 
 /**
- * add :: Options -> Task Error Results
+ * add :: Configuration -> Task Error Results
  */
 const add = ({ src, type, ...entity }, slug = slugify(entity.title)) =>
     addEntry({ entity: { ...entity, draft: true, slug }, ...getEntry(slug, { src, type }) })

@@ -3,7 +3,7 @@
 // const Task = require('folktale/concurrency/task')
 
 /**
- * get :: Options -> Task Error Any
+ * get :: Configuration -> Task Error Any
  */
 const get = () => 'Not implemented yet'
 

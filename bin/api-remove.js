@@ -9,15 +9,15 @@ const validate = require('../lib/config/validate')
 const required = ['dist', 'name', 'src', 'type']
 
 /**
- * runRemove :: Options -> void
+ * runRemove :: Configuration -> void
  */
-const runRemove = options => {
+const runRemove = config => {
     console.time('API source/endpoint removed in')
-    validate(required, options)
+    validate(required, config)
         .orElse(logReject('Invalid parameter'))
         .chain(remove)
         .map(() => {
-            log(`The entry "${options.name}" has been successfully removed`)
+            log(`The entry "${config.name}" has been successfully removed`)
             console.timeEnd('API source/endpoint removed in')
         })
         .run()

@@ -126,7 +126,7 @@ Markdown API has been developped and used in production with NodeJS >= 10. Tests
 
 ## Configuration
 
-An optional configuration file named `api.config.js` can be used to define default values for all command options values, except the `--name, -n` and `--type, -t` options which are required to update or remove a resource entry.
+A configuration file named `api.config.js` can be used to define default values for all command arguments except the `--name, -n` and `--type, -t`, which are required to update or remove a resource entry.
 
 Its path will be resolved to the directory where the command is run from. Each configuration value might be a function returning the expected value.
 
@@ -238,9 +238,9 @@ Parameters:
   -w, --watch            automatically build on change
 ```
 
-Check [doc/long-term-cache](doc/long-term-cache.md) to learn more about `options.hash`, long term caching of endpoints, `options.subVersion`, and preserving endpoints versions between build updates.
+Check [doc/long-term-cache](doc/long-term-cache.md) to learn more about `config.hash`, long term caching of endpoints, `config.subVersion`, and preserving endpoints versions between build updates.
 
-`options.subVersion` can't be activated without `options.hash` being `true`.
+`config.subVersion` can't be activated without `config.hash` being `true`.
 
 ### `api stats`
 

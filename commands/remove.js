@@ -4,10 +4,10 @@ const logReject = require('../lib/console/logReject')
 const removeEntry = require('../lib/entry/removeEntry')
 
 /**
- * remove :: Options -> Task Error Results
+ * remove :: Configuration -> Task Error Results
  */
-const remove = options =>
-    removeEntry(getEntry(options.name, options))
+const remove = config =>
+    removeEntry(getEntry(config.name, config))
         .orElse(logReject('There was an error while trying to remove entry'))
 
 module.exports = remove

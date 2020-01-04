@@ -54,11 +54,11 @@ const setLastModifiedTime = require('../lib/fs/setLastModifiedTime')
 const fixturesPath = join(__dirname, 'fixtures', 'build')
 
 /**
- * setOptions :: Options -> Options
+ * setConfig :: Configuration -> Configuration
  *
- * It sets default options by only requiring `options.src` and `options.dist`.
+ * It sets default config by only requiring `config.src` and `config.dist`.
  */
-const setOptions = ({
+const setConfig = ({
     dist,
     entitiesPerPage = 10,
     force = false,
@@ -83,7 +83,7 @@ const setOptions = ({
  * It collects entries by using their names, and return them to assert against
  * them in `expectUpdate`.
  */
-const setEntries = (expected, { dist, hash, src, type } = setOptions(expected.options)) =>
+const setEntries = (expected, { dist, hash, src, type } = setConfig(expected.config)) =>
     mapValues(
         map(entry => {
 
@@ -100,10 +100,10 @@ const setEntries = (expected, { dist, hash, src, type } = setOptions(expected.op
  * It sets default properties/values to given `Update` in order to preserve its
  * expected structure (and to write more declarative tests).
  */
-const setExpected = ({ entries = {}, indexes = {}, options }) => ({
+const setExpected = ({ config, entries = {}, indexes = {} }) => ({
+    config: setConfig(config),
     entries: { add: [], remove: [], update: [], ...entries },
     indexes: { cache: {}, remove: [], write: {}, ...indexes },
-    options: setOptions(options),
 })
 
 /**
@@ -113,9 +113,9 @@ const setExpected = ({ entries = {}, indexes = {}, options }) => ({
  *
  * It asserts against expected `entries` and `indexes` to update.
  */
-const expectUpdate = async (_expected, { options, ...expected } = setExpected(_expected)) => {
+const expectUpdate = (_expected, { config, ...expected } = setExpected(_expected)) => {
     process.env.NODE_ENV = 'test-with-errors' // Enable tasks errors logging from /lib/console/log.js
-    return await build.getEndpointsUpdate(options)
+    return build.getEndpointsUpdate(config)
         .map(actual => {
             assert.deepStrictEqual(actual.entries, expected.entries)
             assert.deepStrictEqual(actual.indexes.write, expected.indexes.write)
@@ -127,11 +127,11 @@ const expectUpdate = async (_expected, { options, ...expected } = setExpected(_e
 }
 
 /**
- * expectRejects :: Options -> Promise Error void
+ * expectRejects :: Configuration -> Promise Error void
  */
-const expectRejects = async options => {
+const expectRejects = async config => {
     process.env.NODE_ENV = 'test' // Disable tasks errors logging from /lib/console/log.js
-    return await assert.rejects(build.getEndpointsUpdate(setOptions(options)).run().promise())
+    return await assert.rejects(build.getEndpointsUpdate(setConfig(config)).run().promise())
 }
 
 
@@ -182,7 +182,7 @@ describe('build#getEndpointsUpdate()', () => {
 
     it('returns update for a single entry to add', () => {
 
-        const options = { dist: 'empty', src: 'single' }
+        const config = { dist: 'empty', src: 'single' }
         const entityIndex = {
             categories: ['test'],
             date: 20000101,
@@ -197,27 +197,27 @@ describe('build#getEndpointsUpdate()', () => {
             hasIndexUpdate: true,
             name: entityIndex.name,
         }
-        const entries = setEntries({ entries: { add: [entry] }, options })
+        const entries = setEntries({ config, entries: { add: [entry] } })
 
         const pages = { 1: { entities: [entityIndex], next: '', prev: '' } }
         const indexes = { all: pages, test: pages }
         const indexesUpdate = { cache: indexes, write: indexes }
 
-        return expectUpdate({ entries, indexes: indexesUpdate, options })
+        return expectUpdate({ config, entries, indexes: indexesUpdate })
     })
 
     it('returns update for a single entry to remove', () => {
 
-        const options = { dist: 'without-cache-single', src: 'empty-posts' }
+        const config = { dist: 'without-cache-single', src: 'empty-posts' }
         const entry = { name: 'entry' }
-        const entries = setEntries({ entries: { remove: [entry] }, options })
+        const entries = setEntries({ config, entries: { remove: [entry] } })
 
-        return expectUpdate({ entries, options })
+        return expectUpdate({ config, entries })
     })
 
     it('returns update for a single entry index to update', async () => {
 
-        const options = { dist: 'without-cache-single', src: 'single-updated-index' }
+        const config = { dist: 'without-cache-single', src: 'single-updated-index' }
         const entityIndex = {
             categories: ['test-updated-index'],
             date: 20000101,
@@ -233,7 +233,7 @@ describe('build#getEndpointsUpdate()', () => {
             hasStaticDirUpdate: false,
             name: entityIndex.name,
         }
-        const entries = setEntries({ entries: { update: [entry] }, options })
+        const entries = setEntries({ config, entries: { update: [entry] } })
 
         const pages = { 1: { entities: [entityIndex], next: '', prev: '' } }
         const indexes = { all: pages, 'test-updated-index': pages }
@@ -241,12 +241,12 @@ describe('build#getEndpointsUpdate()', () => {
 
         await setLastModifiedTime(entries.update[0].srcIndex).run().promise()
 
-        return expectUpdate({ entries, indexes: indexesUpdate, options })
+        return expectUpdate({ config, entries, indexes: indexesUpdate })
     })
 
     it('returns update for a single entry content to update', async () => {
 
-        const options = { dist: 'without-cache-single', src: 'single-updated-content' }
+        const config = { dist: 'without-cache-single', src: 'single-updated-content' }
         const entityIndex = {
             categories: ['test'],
             date: 20000101,
@@ -262,17 +262,17 @@ describe('build#getEndpointsUpdate()', () => {
             hasStaticDirUpdate: false,
             name: entityIndex.name,
         }
-        const entries = setEntries({ entries: { update: [entry] }, options })
+        const entries = setEntries({ config, entries: { update: [entry] } })
 
         await setLastModifiedTime(entries.update[0].srcContent).run().promise()
 
-        return expectUpdate({ entries, options })
+        return expectUpdate({ config, entries })
 
     })
 
     it('returns update for a single entry excerpt to update', async () => {
 
-        const options = { dist: 'without-cache-single', src: 'single-updated-excerpt' }
+        const config = { dist: 'without-cache-single', src: 'single-updated-excerpt' }
         const entityIndex = {
             categories: ['test'],
             date: 20000101,
@@ -288,7 +288,7 @@ describe('build#getEndpointsUpdate()', () => {
             hasStaticDirUpdate: false,
             name: entityIndex.name,
         }
-        const entries = setEntries({ entries: { update: [entry] }, options })
+        const entries = setEntries({ config, entries: { update: [entry] } })
 
         const pages = { 1: { entities: [entityIndex], next: '', prev: '' } }
         const indexes = { all: pages, test: pages }
@@ -296,29 +296,29 @@ describe('build#getEndpointsUpdate()', () => {
 
         await setLastModifiedTime(entries.update[0].srcExcerpt).run().promise()
 
-        return expectUpdate({ entries, indexes: indexesUpdate, options })
+        return expectUpdate({ config, entries, indexes: indexesUpdate })
     })
 
     it('returns update for a single entry static dir to update', async () => {
 
-        const options = { dist: 'without-cache-single', src: 'single-updated-static-dir' }
+        const config = { dist: 'without-cache-single', src: 'single-updated-static-dir' }
         const entry = {
             hasEntityUpdate: false,
             hasIndexUpdate: false,
             hasStaticDirUpdate: true,
             name: 'entry',
         }
-        const entries = setEntries({ entries: { update: [entry] }, options })
+        const entries = setEntries({ config, entries: { update: [entry] } })
 
         await setLastModifiedTime(join(entries.update[0].srcStatic, 'static.svg')).run().promise()
 
-        return expectUpdate({ entries, options })
+        return expectUpdate({ config, entries })
 
     })
 
     it('returns update for a single entry to add [with cache]', () => {
 
-        const options = { dist: 'with-cache-multiple-add', src: 'multiple' }
+        const config = { dist: 'with-cache-multiple-add', src: 'multiple' }
         const beforeEntityIndex = {
             categories: ['test'],
             date: 19991231,
@@ -349,19 +349,19 @@ describe('build#getEndpointsUpdate()', () => {
             hasIndexUpdate: true,
             name: entityIndex.name,
         }
-        const entries = setEntries({ entries: { add: [entry] }, options })
+        const entries = setEntries({ config, entries: { add: [entry] } })
 
         const pages = { 1: { entities: [beforeEntityIndex, entityIndex, afterEntityIndex], next: '', prev: '' } }
         const indexes = { all: pages, test: pages }
         const indexesUpdate = { cache: indexes, write: indexes }
 
-        return expectUpdate({ entries, indexes: indexesUpdate, options })
+        return expectUpdate({ config, entries, indexes: indexesUpdate })
 
     })
 
     it('returns update for a single entry to remove [with cache]', () => {
 
-        const options = { dist: 'with-cache-multiple', src: 'multiple-remove' }
+        const config = { dist: 'with-cache-multiple', src: 'multiple-remove' }
         const entry = { name: 'entry' }
         const beforeEntityIndex = {
             categories: ['test'],
@@ -379,19 +379,19 @@ describe('build#getEndpointsUpdate()', () => {
             slug: 'after-entry',
             title: 'title',
         }
-        const entries = setEntries({ entries: { remove: [entry] }, options })
+        const entries = setEntries({ config, entries: { remove: [entry] } })
 
         const pages = { 1: { entities: [beforeEntityIndex, afterEntityIndex], next: '', prev: '' } }
         const indexes = { all: pages, test: pages }
         const indexesUpdate = { cache: indexes, write: indexes }
 
-        return expectUpdate({ entries, indexes: indexesUpdate, options })
+        return expectUpdate({ config, entries, indexes: indexesUpdate })
 
     })
 
     it('returns update for a single entry index to update [with cache]', async () => {
 
-        const options = { dist: 'with-cache-multiple', src: 'multiple-updated-index' }
+        const config = { dist: 'with-cache-multiple', src: 'multiple-updated-index' }
         const beforeEntityIndex = {
             categories: ['test'],
             date: 19991231,
@@ -423,18 +423,18 @@ describe('build#getEndpointsUpdate()', () => {
             hasStaticDirUpdate: false,
             name: entityIndex.name,
         }
-        const entries = setEntries({ entries: { update: [entry] }, options })
+        const entries = setEntries({ config, entries: { update: [entry] } })
 
         const indexes = {
             all: { 1: { entities: [beforeEntityIndex, entityIndex, afterEntityIndex], next: '', prev: '' } },
             test: { 1: { entities: [beforeEntityIndex, afterEntityIndex], next: '', prev: '' } },
             'test-updated-index': { 1: { entities: [entityIndex], next: '', prev: '' } },
         }
-        const indexesUpdate = { cache: indexes, options, write: indexes }
+        const indexesUpdate = { cache: indexes, config, write: indexes }
 
         await setLastModifiedTime(entries.update[0].srcIndex).run().promise()
 
-        return expectUpdate({ entries, indexes: indexesUpdate, options })
+        return expectUpdate({ config, entries, indexes: indexesUpdate })
 
     })
 
@@ -452,7 +452,7 @@ describe('build#getEndpointsUpdate()', () => {
 
     it('returns update for a single entry to add [with paginaton][with cache]', async () => {
 
-        const options = { dist: 'with-pagination-with-cache', entitiesPerPage: 1, src: 'multiple' }
+        const config = { dist: 'with-pagination-with-cache', entitiesPerPage: 1, src: 'multiple' }
         const beforeEntityIndex = {
             categories: ['test'],
             date: 19991231,
@@ -483,7 +483,7 @@ describe('build#getEndpointsUpdate()', () => {
             hasIndexUpdate: true,
             name: entityIndex.name,
         }
-        const entries = setEntries({ entries: { add: [entry] }, options })
+        const entries = setEntries({ config, entries: { add: [entry] } })
 
         const pagesWrite = {
             2: { entities: [entityIndex], next: 'page/3/', prev: 'page/1/' },
@@ -495,15 +495,15 @@ describe('build#getEndpointsUpdate()', () => {
         }
         const write = { all: pagesWrite, test: pagesWrite }
         const cache = { all: pagesCache, test: pagesCache }
-        const indexes = { cache, options, write }
+        const indexes = { cache, config, write }
 
-        return expectUpdate({ entries, indexes, options })
+        return expectUpdate({ config, entries, indexes })
 
     })
 
     it('returns update for a single entry to add [with hash]', () => {
 
-        const options = { dist: 'empty', hash: true, src: 'single' }
+        const config = { dist: 'empty', hash: true, src: 'single' }
         const content = '<h1 id=\"content\">Content</h1>\n'
         /* eslint-disable sort-keys */
         const entityIndex = {
@@ -524,13 +524,13 @@ describe('build#getEndpointsUpdate()', () => {
             hasIndexUpdate: true,
             name: entityIndex.name,
         }
-        const entries = setEntries({ entries: { add: [entry] }, options })
+        const entries = setEntries({ config, entries: { add: [entry] } })
 
         const pages = { 1: { entities: [entityIndex], hash: getHash(entityIndex.hash), next: '', prev: '' } }
         const indexes = { all: pages, test: pages }
         const indexesUpdate = { cache: indexes, write: indexes }
 
-        return expectUpdate({ entries, indexes: indexesUpdate, options })
+        return expectUpdate({ config, entries, indexes: indexesUpdate })
     })
 
     // it('returns update for multiple entries to add [with hash]', async () => {
