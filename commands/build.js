@@ -166,6 +166,9 @@ const setEntitiesEndpoints = ({ add, remove, update }, { hash, subVersion }) =>
  *   staticDirs: Number,
  * }
  * IndexesResults => { write: Number, remove: Number }
+ *
+ * It should run the file system operations described in the given `Update` to
+ * build endpoints from the corresponding resource type.
  */
 const setEndpoints = ({ entries, indexes, manifest, options }) =>
     Task.of(entities => indexes => () => ({ entities, indexes }))
@@ -389,6 +392,10 @@ const getIndexesToWrite = update =>
  * IndexesUpdate => { cache: Indexes, remove: [Path], write: Indexes }
  * Indexes => { [IndexName]: Pages }
  *
+ * It should assign an `IndexesUpdate` to `Update` that describes indexes to
+ * write (excerpt contents) and remove (only paths), as well as a flat (cache)
+ * version that will used to detect index changes of the next build.
+ *
  * If not empty, it should reduce a cached indexes tree and set:
  * - `update.indexes.cache`  with the next indexes tree
  * - `update.indexes.write`  with parts of the next indexes tree to write
@@ -512,6 +519,12 @@ const getEntriesUpdate = options =>
  *   Manifest,
  *   Options,
  * }
+ *
+ * It should return an `Update` that describes file system operations that have
+ * to be run to build endpoints from the corresponding resource type:
+ * - a collection of entries to add/remove/update
+ * - a collection of indexes to remove/write (as well as a flat/cached version)
+ * - the configuration to build those endpoints
  */
 const getEndpointsUpdate = compose(
     map(update => update.options.hash ? getManifestUpdate(update) : update),
