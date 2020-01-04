@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 
 const build = require('../commands/build.js')
 const cli = require('commander')

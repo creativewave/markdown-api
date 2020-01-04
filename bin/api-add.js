@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 
 const add = require('../commands/add.js')
 const cli = require('commander')

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 
 const cli = require('commander')
 const config = require('../lib/config')
