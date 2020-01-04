@@ -412,7 +412,7 @@ const getIndexesUpdate = (update, write = getIndexesToWrite(update)) =>
                     {
                         hash: update.options.hash,
                         limit: update.options.entitiesPerPage,
-                    }
+                    },
                 )
                 update.indexes.write[category] = update.indexes.cache[category]
             }
@@ -455,7 +455,16 @@ const getEntriesUpdate = options =>
             remove: getEntries(difference(dist, src), options),
         }))
         .chain(({ add, old, remove }) => options.force
-            ? Task.of({ add, remove, update: old.map(entry => ({ ...entry, hasEntityUpdate: true, hasIndexUpdate: true, hasStaticDirUpdate: true })) })
+            ? Task.of({
+                add,
+                remove,
+                update: old.map(entry => ({
+                    ...entry,
+                    hasEntityUpdate: true,
+                    hasIndexUpdate: true,
+                    hasStaticDirUpdate: true,
+                })),
+            })
             : getUpdatedEntries(old, options)
                 .map(update => ({ add, remove, update }))
                 .orElse(logReject(`There was an error while getting updated '${options.type}'`)))
@@ -464,7 +473,7 @@ const getEntriesUpdate = options =>
                 return Task.of([op, entries])
             }
             return entries.reduce(
-                (task, entry) => entry.hasIndexUpdate || entry.hasEntityUpdate
+                (task, entry) => (entry.hasIndexUpdate || entry.hasEntityUpdate)
                     ? task.and(getEntity(entry)).map(([[op, entries], entity]) => {
                         if (entity.draft) {
                             return [op, entries]
