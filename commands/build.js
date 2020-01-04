@@ -155,8 +155,8 @@ const setEntitiesEndpoints = ({ add, remove, update }, { hash, subVersion }) =>
  * Update => {
  *   entries: EntriesUpdate,
  *   indexes: IndexesUpdate,
- *   Options,
- *   Manifest,
+ *   manifest: Manifest,
+ *   options: Options,
  * }
  * Result => { entities: EntitiesResults, indexes: IndexesResults }
  * EntitiesResults => {
@@ -179,7 +179,7 @@ const setEndpoints = ({ entries, indexes, manifest, options }) =>
 /**
  * getManifestUpdate :: Update -> Update
  *
- * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, Manifest, Options }
+ * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, manifest: Manifest, options: Options }
  * IndexesUpdate => { cache: Indexes, remove: [Path], write: Indexes }
  * Indexes => { [IndexName]: Pages }
  * Pages => { [Page]: Index }
@@ -215,18 +215,16 @@ const getManifestUpdate = update => ({
 /**
  * reduceIndexes :: { [IndexName]: [EntityIndex] } -> Update -> [IndexName, { Page: Index }] -> Update
  *
- * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, Options }
+ * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, options: Options }
  * IndexesUpdate => { cache: Indexes, remove: [Path], write: Indexes }
  * Indexes => { [IndexName]: Pages }
  * Pages => { [Page]: Index }
  * Index => { entities: [EntityIndex], hash?: Number, prev: Path, next: Path }
  *
- * It is too hard and slow to iterate over each `EntityIndex`, check if it needs
- * to be removed, or if another `EntityIndex` should be writed before, handle
- * pagination, etc...
- *
- * Instead, each `IndexName` (category) get its `EntityIndex`es handled:
- *  > (1) flat (without pagination)
+ * Iterating over each `EntityIndex` to check if it should be (re)moved, while
+ * also handling pagination, is too hard and slow. Instead, each `IndexName`
+ * (category) get its `EntityIndex`es:
+ *  > (1) flattened (without pagination)
  *  > (2) sliced from the oldest entity after the oldest to write or remove
  *  > (3) filtered from entities to remove
  *  > (4) merged with entities to write
@@ -353,7 +351,7 @@ const getIndexesCache = ({ distIndexes, force }) => force
 /**
  * getIndexesToWrite :: Update -> { IndexName: [EntityIndex] }
  *
- * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, Options }
+ * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, options: Options }
  * EntriesUpdate => { add: [Entry], remove: [Entry], update: [Entry] }
  * Entry => { ...Entry, Entity }
  *
@@ -388,7 +386,7 @@ const getIndexesToWrite = update =>
 /**
  * getIndexesUpdate :: Update -> Update
  *
- * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, Options }
+ * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, options: Options }
  * IndexesUpdate => { cache: Indexes, remove: [Path], write: Indexes }
  * Indexes => { [IndexName]: Pages }
  *
@@ -442,7 +440,7 @@ const getIndexesUpdate = (update, write = getIndexesToWrite(update)) =>
  *   subVersion: Boolean,
  *   type: EntityType,
  * }
- * Update => { entries: EntriesUpdate, Options }
+ * Update => { entries: EntriesUpdate, options: Options }
  * EntriesUpdate => { add: [Entry], remove: [Entry], update: [Entry] }
  *
  * TODO(feature: use `slug` for endpoint path): think if this feature should be
@@ -516,8 +514,8 @@ const getEntriesUpdate = options =>
  * Update => {
  *   entries: EntriesUpdate,
  *   indexes: IndexesUpdate,
- *   Manifest,
- *   Options,
+ *   manifest: Manifest,
+ *   options: Options,
  * }
  *
  * It should return an `Update` that describes file system operations that have
