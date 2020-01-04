@@ -555,9 +555,9 @@ const getEndpointsUpdate = compose(
  */
 const build = config =>
     getDirectoryFilesNames(config.src)
-        .orElse(logReject(`There was an error while reading entries types from path '${config.src}'`))
+        .orElse(logReject(`There was an error while reading sources directory from '${config.src}'`))
         .chain(types => isEmpty(types)
-            ? Task.rejected(log('error', `There was no entries type directory in ${config.src}`))
+            ? Task.rejected(log('error', `There was no sources found in ${config.src}`))
             : Task.of(types))
         .chain(types => types.reduce(
             (build, type) => build
