@@ -8,20 +8,19 @@ const logReject = require('../lib/console/logReject')
 const split = require('lodash/fp/split')
 const validate = require('../lib/config/validate')
 
-const included = ['categories', 'content', 'date', 'excerpt', 'src', 'title', 'type']
 const required = ['src', 'title', 'type']
+const included = [...required, 'categories', 'content', 'date', 'excerpt']
 
 /**
  * runAdd :: Configuration -> void
  */
-const runAdd = config => {
+const runAdd = userConfig => {
     console.time('API entry created in')
-    validate(required, config)
+    validate(required, getConfig(included)({ ...config, ...userConfig }))
         .orElse(logReject('Invalid parameter'))
-        .map(getConfig(included))
         .chain(add)
         .map(() => {
-            log(`"${config.title}" has been successfully added to ${config.type} entries`)
+            log(`"${userConfig.title}" has been successfully added to ${userConfig.type} entries`)
             console.timeEnd('API entry created in')
         })
         .run()

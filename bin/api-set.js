@@ -8,20 +8,19 @@ const set = require('../commands/set.js')
 const split = require('lodash/fp/split')
 const validate = require('../lib/config/validate')
 
-const included = ['categories', 'content', 'date', 'excerpt', 'name', 'src', 'title', 'type']
 const required = ['name', 'src', 'type']
+const included = [...required, 'categories', 'content', 'date', 'excerpt', 'title']
 
 /**
  * runSet :: Configuration -> void
  */
-const runSet = config => {
+const runSet = userConfig => {
     console.time('API source set in')
-    validate(required, config)
+    validate(required, getConfig(included)({ ...config, ...userConfig }))
         .orElse(logReject('Invalid parameter'))
-        .map(getConfig(included))
         .chain(set)
         .map(() => {
-            log(`The entry "${config.name}" has been successfully updated`)
+            log(`The entry "${userConfig.name}" has been successfully updated`)
             console.timeEnd('API source set in')
         })
         .run()

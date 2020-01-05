@@ -16,9 +16,9 @@ const included = [...required, 'force', 'hash', /*'type',*/ 'subVersion']
  * TODO(fix): reject task if `config.hash` is `false` and `config.version` is
  * `true`.
  */
-const runBuild = config => {
+const runBuild = userConfig => {
     console.time('API endpoints built in')
-    validate(required, getConfig(included, { ...config, config }))
+    validate(required, getConfig(included)({ ...config, ...userConfig }))
         .orElse(logReject('Invalid parameter'))
         .chain(build)
         .map(results => Object.entries(results).map(([type, { entities, indexes }]) => {
