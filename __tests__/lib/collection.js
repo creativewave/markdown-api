@@ -153,7 +153,7 @@ describe('filterTask()', () => {
             .promise()
             .then(actual => expect(actual).toEqual([1])))
     it('should async filter a Collection that is an Object', async () =>
-        await filterTask(entry => Task.of(entry.pop()), { a: 0, b: 1 })
+        await filterTask(entry => Task.of(entry[1]), { a: 0, b: 1 })
             .run()
             .promise()
             .then(actual => expect(actual).toEqual({ b: 1 })))
@@ -168,14 +168,14 @@ describe('into()', () => {
     })
     it('should transform/filter/reduce an Object into a Number', () => {
 
-        const transform = entry => entry.pop()
+        const transform = entry => increment(entry[1])
         const transducer = compose(mapReducer(transform), filterReducer(lt(4)))
 
         expect(into(0, transducer, { a: 1, b: 2, c: 3 })).toEqual(5)
     })
     it('should transform/filter/reduce an Map into a Number', () => {
 
-        const transform = entry => entry.pop()
+        const transform = entry => increment(entry[1])
         const transducer = compose(mapReducer(transform), filterReducer(lt(4)))
 
         expect(into(0, transducer, new Map([['a', 1], ['b', 2], ['c', 3]]))).toEqual(5)
