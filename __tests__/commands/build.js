@@ -328,6 +328,37 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
         })
     })
 
+    it('resolves Update to build endpoints after adding source entry and removing distribution directory [single]', () => {
+
+        fileSystem.src = { posts: { entry: files.src.entry } }
+        delete fileSystem.dist
+
+        const entryName = 'entry'
+        const entityIndex = {
+            categories: ['test'],
+            date: 20000101,
+            excerpt: '<p><em>Excerpt</em></p>\n',
+            name: entryName,
+            slug: entryName,
+            title: 'title',
+        }
+        const entry = {
+            ...getEntry(entryName, config),
+            entity: { ...entityIndex, content: '<h1 id=\"content\">Content</h1>\n' },
+            hasEntityUpdate: true,
+            hasIndexUpdate: true,
+            name: entryName,
+        }
+        const pages = { 1: { entities: [entityIndex], next: '', prev: '' } }
+        const indexes = { all: pages, test: pages }
+
+        return expectUpdate({
+            config,
+            entries: { add: [entry] },
+            indexes: { cache: indexes, write: indexes },
+        })
+    })
+
     it('resolves Update to build endpoints after removing entry [single]', () => {
 
         fileSystem.src = { posts: {} }
