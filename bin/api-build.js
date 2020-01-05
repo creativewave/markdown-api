@@ -18,9 +18,8 @@ const included = [...required, 'force', 'hash', /*'type',*/ 'subVersion']
  */
 const runBuild = config => {
     console.time('API endpoints built in')
-    validate(required, config) 
+    validate(required, getConfig(included, { ...config, config }))
         .orElse(logReject('Invalid parameter'))
-        .map(getConfig(included))
         .chain(build)
         .map(results => Object.entries(results).map(([type, { entities, indexes }]) => {
             console.group(type)
