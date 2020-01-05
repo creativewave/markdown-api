@@ -27,39 +27,30 @@ It also provides:
 
 ## How it works?
 
-Each resource entry should be contained in its own directory (its name will act as its identifier), contained itself in a directory named after the resource type, eg. `posts`:
+Each resource entry should be contained in its own directory (its name will act as its identifier), contained itself in a directory named after the resource type, eg. `posts`, and each resource entry has 3 mandatory files:
 
 ```
 src
-  └── posts
-    └── my-post-identifier-1
-      └── …
-    └── my-post-identifier-2
-      └── …
-    └── …
-  └── …
-```
-
-Each resource entry requires 3 mandatory files:
-
-```
-src
-  └── posts
-    └── my-post-identifier-1
-      └── content.md
-      └── excerpt.md
-      └── index.js
-      └── static/
-          └── …
-    └── …
-  └── …
+  └─ posts
+    └─ my-post-identifier-1
+      └─ content.md
+      └─ excerpt.md
+      └─ index.js
+      └─ static/
+          └─ …
+    └─ my-post-identifier-2
+      └─ …
+    └─ …
+  └─ …
 ```
 
 - `content.md`: the main content
 - `excerpt.md`: the content used in indexes
 - `index.js`: the meta data (also used in indexes)
 
-Static files referenced in those contents may be stored in the optional `static` folder. All static files will be copied into the dist folder, and optionally processed by an image optimizer (default to `imagemin` and `imagemin-webp`).
+The optional `static` directory may contain static files referenced in `content.md` or `excerpt.md`. It will be copied into the dist folder. `jpg` and `png` files will be processed by [`imagemin`](https://github.com/imagemin/imagemin) and [`imagemin-webp`](https://github.com/imagemin/imagemin-webp).
+
+**Note:** later (see [TODO](##todo)) custom Markdown (default to [`markedjs`](https://marked.js.org/)) and files processors can be defined via a `renderers` property in the [optional configuration file](#configuration).
 
 `index.js`:
 
@@ -81,39 +72,39 @@ The resource will be indexed in resources lists named after the specified `categ
 
 ```
 src
-  └── posts
-    └── entry-1
-      └── content.md
-      └── excerpt.md
-      └── index.js
-      └── static
-        └── img.jpg
-    └── entry-2
-        …
+  └─ posts
+    └─ entry-1
+      └─ content.md
+      └─ excerpt.md
+      └─ index.js
+      └─ static
+        └─ img.jpg
+    └─ entry-2
+      └─ …
 ```
 
 **… the `api build` command will create the following distribution files tree:**
 
 ```
 dist
-  └── api
-    └── categories
-      └── posts
-        └── all
-          └── 1/index.json  // List of n first posts
-          └── 2/index.json  // List of 2n first posts
-        └── category-1
-          └── 1/index.json  // List of n first posts from "category-1"
-          └── 2/index.json  // List of 2n first posts from "category-1"
-        └── index.json      // List of categories
-    └── posts
-      └── entry-1/index.json
-      └── entry-2/index.json
-  └── static
-    └── posts
-      └── entry-1
-        └── img.jpg
-        └── img.webp
+  └─ api
+    └─ categories
+      └─ posts
+        └─ all
+          └─ 1/index.json   // List of n first posts
+          └─ 2/index.json   // List of 2n first posts
+        └─ category-1
+          └─ 1/index.json   // List of n first posts from "category-1"
+          └─ 2/index.json   // List of 2n first posts from "category-1"
+        └─ index.json       // List of categories
+    └─ posts
+      └─ entry-1/index.json
+      └─ entry-2/index.json
+  └─ static
+    └─ posts
+      └─ entry-1
+        └─ img.jpg
+        └─ img.webp
 ```
 
 ## Installation
@@ -122,13 +113,13 @@ dist
   npm i @cdoublev/markdown-api
 ```
 
-Markdown API has been developped and used in production with NodeJS >= 10. Tests and support of previous versions may come later.
+Markdown API is tested with current NodeJS LTS and latest versions.
 
 ## Configuration
 
 A configuration file named `api.config.js` can be used to define default values for all command arguments except the `--name, -n` and `--type, -t`, which are required to update or remove a resource entry.
 
-Its path will be resolved to the directory where the command is run from. Each configuration value might be a function returning the expected value.
+Its path will be resolved to the directory where the command is run. Each configuration value might be a function returning the expected value.
 
 ```js
 module.exports = {
