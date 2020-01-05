@@ -9,10 +9,9 @@ const addStaticDirs = require('../lib/entry/addStaticDirs')
 const capitalize = require('lodash/fp/capitalize')
 const categorize = require('../lib/categorize')
 const compose = require('lodash/fp/compose')
-const concat = require('../lib/collection/concat')
 const difference = require('lodash/fp/difference')
 const every = require('lodash/fp/every')
-const filterReducer = require('../lib/lambda/filterReducer')
+const filterReducer = require('../lib/collection/filterReducer')
 const find = require('lodash/fp/find')
 const flatten = require('lodash/fp/flatten')
 const getDirectoriesFilesNames = require('../lib/fs/getDirectoriesFilesNames')
@@ -21,13 +20,13 @@ const getEntity = require('../lib/entry/getEntity')
 const getEntries = require('../lib/entry/getEntries')
 const getHash = require('../lib/string/getHash')
 const getUpdatedEntries = require('../lib/entry/getUpdatedEntries')
+const into = require('../lib/collection/into')
 const isEmpty = require('lodash/fp/isEmpty')
 const join = require('../lib/path/getJoinedPath')
 const log = require('../lib/console/log')
 const logReject = require('../lib/console/logReject')
-const map = require('../lib/lambda/map')
-const mapEntriesTask = require('../lib/collection/mapEntriesTask')
-const mapTask = require('../lib/lambda/mapTask')
+const map = require('../lib/collection/map')
+const mapTask = require('../lib/collection/mapTask')
 const mapValues = require('lodash/fp/mapValues')
 const Maybe = require('folktale/maybe')
 const merge = require('lodash/fp/merge')
@@ -45,7 +44,6 @@ const setEntities = require('../lib/entry/setEntities')
 const setStaticDirs = require('../lib/entry/setStaticDirs')
 const setVersion = require('../lib/entry/setVersion')
 const Task = require('folktale/concurrency/task')
-const transduce = require('../lib/lambda/transduce')
 
 /**
  * setManifestEndpoint :: Manifest -> Task Error Path
@@ -295,7 +293,7 @@ const reduceIndexes = write => (update, [category, pages]) => {
 
     // (6) Paginate
     let nextPages = paginate(nextEntities, { limit: update.config.entitiesPerPage, offset: firstPage })
-    const previousPages = transduce(filterReducer(([page]) => page < firstPage), concat, {}, Object.entries(pages))
+    const previousPages = into({}, filterReducer(([page]) => page < firstPage), pages)
     const nextCache = { ...previousPages, ...nextPages }
     // Get previous pages indexes paths whose number is greater than the new pages count
     const remove = difference(Object.keys(pages), Object.keys(nextCache))
@@ -473,7 +471,7 @@ const getEntriesUpdate = config =>
             : getUpdatedEntries(old, config)
                 .map(update => ({ add, remove, update }))
                 .orElse(logReject(`There was an error while getting updated '${config.type}'`)))
-        .chain(mapEntriesTask(([op, entries]) => {
+        .chain(mapTask(([op, entries]) => {
             if (op === 'remove') {
                 return Task.of([op, entries])
             }
