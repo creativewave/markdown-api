@@ -57,9 +57,12 @@ const expectUpdate = ({ entries = {}, indexes = {}, config }) => {
  * `/lib/module/require`.
  */
 const fsIO = type => (path, options, callback = options) => {
+
+    const pathParts = path.split(sep)
+
     try {
 
-        const output = path.split(sep).reduce((dir, file) => dir[file], fileSystem)
+        const output = pathParts.reduce((dir, file) => dir[file], fileSystem)
 
         switch (type) {
             case 'mkdir':
@@ -76,6 +79,14 @@ const fsIO = type => (path, options, callback = options) => {
                 throw Error(`Could not find an implementation for ${type}`)
         }
     } catch {
+
+        // Create directory in fileSystem (mkdir -p /parent/dir/does/not/exist)
+        if (type === 'mkdir' && options.recursive) {
+
+            pathParts.reduce((fileSystem, part) => fileSystem[part] = {}, fileSystem)
+
+            return callback(null)
+        }
 
         const error = new Error('ENOENT: no such file or directory')
 
@@ -255,7 +266,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
         delete fileSystem.dist
 
         return build.getEndpointsUpdate(config).run().promise().catch(() =>
-            expect(fs.mkdir).toHaveBeenCalledTimes(config.dist.split(sep).length + 1)) // + 1st error
+            expect(fs.mkdir).toHaveBeenCalledTimes(1))
     })
 
     it('rejects when sources (type) directory is empty (nothing to build 1/2)', () => {
