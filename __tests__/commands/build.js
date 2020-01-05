@@ -287,7 +287,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
             .rejects.toBe(`There was no '${config.type}' to build`)
     })
 
-    it('returns Update to build endpoints after adding entry [single]', () => {
+    it('resolves Update to build endpoints after adding entry [single]', () => {
 
         fileSystem.src = { posts: { entry: files.src.entry } }
 
@@ -317,7 +317,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
         })
     })
 
-    it('returns Update to build endpoints after removing entry [single]', () => {
+    it('resolves Update to build endpoints after removing entry [single]', () => {
 
         fileSystem.src = { posts: {} }
         fileSystem.dist.api.posts.entry = files.dist.entities.entry
@@ -325,7 +325,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
         return expectUpdate({ config, entries: { remove: [getEntry('entry', config)] } })
     })
 
-    it('returns Update to build endpoints after updating index.js of an entry [single]', () => {
+    it('resolves Update to build endpoints after updating index.js of an entry [single]', () => {
 
         files.src.entry['index.js'].content.categories = ['test-updated-index']
         files.src.entry['index.js'].stat = { mtime: 2 }
@@ -359,7 +359,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
         })
     })
 
-    it('returns Update to build endpoints after updating content.md of an entry [single]', () => {
+    it('resolves Update to build endpoints after updating content.md of an entry [single]', () => {
 
         files.src.entry['content.md'] = { content: '# Updated content', stat: { mtime: 2 } }
         fileSystem.src = { posts: { entry: files.src.entry } }
@@ -386,7 +386,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
         return expectUpdate({ config, entries: { update: [entry] } })
     })
 
-    it('returns Update to build endpoints after updating excerpt.md of an entry [single]', () => {
+    it('resolves Update to build endpoints after updating excerpt.md of an entry [single]', () => {
 
         files.src.entry['excerpt.md'] = { content: '*Updated excerpt*', stat: { mtime: 2 } }
         fileSystem.src = { posts: { entry: files.src.entry } }
@@ -419,7 +419,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
         })
     })
 
-    it('returns Update to build endpoints after updating static dir of an entry [single]', () => {
+    it('resolves Update to build endpoints after updating static dir of an entry [single]', () => {
 
         files.src.entry.static['static.jpg'] = { stat: { mtime: 2 } }
         fileSystem.src = { posts: { entry: files.src.entry } }
@@ -438,7 +438,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
         return expectUpdate({ config, entries: { update: [entry] } })
     })
 
-    it('returns Update to build endpoints after adding an entry [with cache]', () => {
+    it('resolves Update to build endpoints after adding an entry [with cache]', () => {
 
         fileSystem.src = { posts: files.src }
         fileSystem.dist.api.categories.posts['cache.json'] = files.dist.cache
@@ -492,7 +492,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
         })
     })
 
-    it('returns Update to build endpoints after removing an entry [with cache]', () => {
+    it('resolves Update to build endpoints after removing an entry [with cache]', () => {
 
         delete files.src.entry
         fileSystem.src = { posts: files.src }
@@ -531,7 +531,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
 
     })
 
-    it('returns Update to build endpoints after updating index.js of an entry [with cache]', () => {
+    it('resolves Update to build endpoints after updating index.js of an entry [with cache]', () => {
 
         files.src.entry['index.js'].content.categories = ['test-updated-index']
         files.src.entry['index.js'].stat = { mtime: 2 }
@@ -589,7 +589,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
         })
     })
 
-    it('returns Update to build endpoints after updating content.md of an entry [with cache]', () => {
+    it('resolves Update to build endpoints after updating content.md of an entry [with cache]', () => {
 
         files.src.entry['content.md'] = { content: '# Updated content', stat: { mtime: 2 } }
         fileSystem.src = { posts: files.src }
@@ -643,7 +643,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
         })
     })
 
-    it('returns Update to build endpoints after updating index.js of an entry [with cache]', () => {
+    it('resolves Update to build endpoints after updating index.js of an entry [with cache]', () => {
 
         files.src.entry['excerpt.md'] = { content: '*Updated excerpt*', stat: { mtime: 2 } }
         fileSystem.src = { posts: files.src }
@@ -697,7 +697,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
         })
     })
 
-    it('returns Update to build endpoints after adding an entry [with paginaton][with cache]', () => {
+    it('resolves Update to build endpoints after adding an entry [with paginaton][with cache]', () => {
 
         config.entitiesPerPage = 1
 
@@ -815,7 +815,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
     })
 
     // TODO: add an assertion to match against Update.manifest
-    it('returns Update to build endpoints after adding an entry [with hash]', () => {
+    it('resolves Update to build endpoints after adding an entry [with hash]', () => {
 
         config.hash = true
         fileSystem.src = { posts: { entry: files.src.entry } }

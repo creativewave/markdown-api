@@ -17,48 +17,48 @@ const increment = i => ++i
 const lt = max => i => i < max
 
 describe('empty()', () => {
-    it('it should create an empty representation of a given Array', () =>
+    it('creates an empty representation of a given Array', () =>
         expect(empty(['foo'])).toEqual([]))
-    it('it should create an empty representation of a given Object', () =>
+    it('creates an empty representation of a given Object', () =>
         expect(empty({ a: 1 })).toEqual({}))
-    it('it should create an empty representation of a given Map', () =>
+    it('creates an empty representation of a given Map', () =>
         expect(empty(new Map([[1, 2]]))).toEqual(new Map()))
-    it('it should create an empty representation of a given Set', () =>
+    it('creates an empty representation of a given Set', () =>
         expect(empty(new Set([1]))).toEqual(new Set()))
-    it('it should create an empty representation of a given Boolean', () => {
+    it('creates an empty representation of a given Boolean', () => {
         expect(empty(true)).toEqual(true)
         expect(empty(false)).toEqual(true)
     })
-    it('it should create an empty representation of a given Number', () =>
+    it('creates an empty representation of a given Number', () =>
         expect(empty(1)).toEqual(0))
-    it('it should create an empty representation of a given String', () =>
+    it('creates an empty representation of a given String', () =>
         expect(empty('Hello world')).toEqual(''))
 })
 
 describe('concat()', () => {
-    it('it should append a new value into an Array', () =>
+    it('appends a new value into an Array', () =>
         expect(concat([], 1)).toEqual([1]))
-    it('it should append a new value into an Object', () =>
+    it('appends a new value into an Object', () =>
         expect(concat({}, ['a', 1])).toEqual({ a: 1 }))
-    it('it should append a new value into a Map', () =>
+    it('appends a new value into a Map', () =>
         expect(concat(new Map(), ['a', 1])).toEqual(new Map([['a', 1]])))
-    it('it should append a new value into a Set', () =>
+    it('appends a new value into a Set', () =>
         expect(concat(new Set(), 1)).toEqual(new Set([1])))
-    it('it should append a new value into a Boolean', () => {
+    it('appends a new value into a Boolean', () => {
         expect(concat(true, true)).toEqual(true)
         expect(concat(true, false)).toEqual(false)
         expect(concat(false, false)).toEqual(false)
     })
-    it('it should append a new value into a Number', () =>
+    it('appends a new value into a Number', () =>
         expect(concat(-2, 5)).toEqual(3))
-    it('it should append a new value into a String', () =>
+    it('appends a new value into a String', () =>
         expect(concat('Hello ', 'world')).toEqual('Hello world'))
 })
 
 describe('map()', () => {
-    it('should transform a Collection that is an Array', () =>
+    it('transforms a Collection that is an Array', () =>
         expect(map(increment, [1, 2])).toEqual([2, 3]))
-    it('should transform a Collection that is an Object', () => {
+    it('transforms a Collection that is an Object', () => {
 
         const object = { a: 1, b: 2 }
         const transform = ([prop, value]) => [nextChar(prop), increment(value)]
@@ -67,7 +67,7 @@ describe('map()', () => {
 
         expect(actual).toEqual(expected)
     })
-    it('should transform a Collection that is a Map', () => {
+    it('transforms a Collection that is a Map', () => {
 
         const record = new Map([['a', 1], ['b', 2]])
         const transform = ([prop, value]) => [nextChar(prop), increment(value)]
@@ -76,14 +76,14 @@ describe('map()', () => {
 
         expect(actual).toEqual(expected)
     })
-    it('should transform a Collection that is a Set', () =>
+    it('transforms a Collection that is a Set', () =>
         expect(map(increment, new Set([1, 2]))).toEqual(new Set([2, 3])))
-    it('should transform a Collection that is a String', () =>
+    it('transforms a Collection that is a String', () =>
         expect(map(nextChar, 'enn')).toEqual('foo'))
 })
 
 describe('transduce()', () => {
-    it('it should transform and filter a Collection that is an Array', () => {
+    it('transforms and filters a Collection that is an Array', () => {
 
         const transducer = compose(mapReducer(increment), filterReducer(lt(3)))
         const actual = transduce(transducer, [1, 2])
@@ -91,7 +91,7 @@ describe('transduce()', () => {
 
         expect(actual).toEqual(expected)
     })
-    it('it should transform and filter a Collection that is an Object', () => {
+    it('transforms and filters a Collection that is an Object', () => {
 
         const transform = ([prop, value]) => [nextChar(prop), increment(value)]
         const predicate = ([prop]) => prop === 'b'
@@ -102,7 +102,7 @@ describe('transduce()', () => {
 
         expect(actual).toEqual(expected)
     })
-    it('it should transform and filter a Collection that is a Map', () => {
+    it('transforms and filters a Collection that is a Map', () => {
 
         const transform = ([prop, value]) => [nextChar(prop), increment(value)]
         const predicate = ([prop]) => prop === 'b'
@@ -113,7 +113,7 @@ describe('transduce()', () => {
 
         expect(actual).toEqual(expected)
     })
-    it('it should transform and filter a Collection that is a Set', () => {
+    it('transforms and filters a Collection that is a Set', () => {
 
         const transducer = compose(mapReducer(increment), filterReducer(lt(3)))
         const actual = transduce(transducer, new Set([1, 2]))
@@ -121,7 +121,7 @@ describe('transduce()', () => {
 
         expect(actual).toEqual(expected)
     })
-    it('it should transform and filter a Collection that is a String', () => {
+    it('transforms and filters a Collection that is a String', () => {
 
         const predicate = char => char === 'o'
         const transducer = compose(mapReducer(nextChar), filterReducer(predicate))
@@ -134,12 +134,12 @@ describe('transduce()', () => {
 })
 
 describe('mapTask()', () => {
-    it('should async transform a Collection that is an Array', async () =>
+    it('async transforms a Collection that is an Array', async () =>
         await mapTask(i => Task.of(increment(i)), [1, 2])
             .run()
             .promise()
             .then(actual => expect(actual).toEqual([2, 3])))
-    it('should async transform a Collection that is an Object', async () =>
+    it('async transforms a Collection that is an Object', async () =>
         await mapTask(([prop, value]) => Task.of([nextChar(prop), increment(value)]), { a: 1, b: 2 })
             .run()
             .promise()
@@ -147,12 +147,12 @@ describe('mapTask()', () => {
 })
 
 describe('filterTask()', () => {
-    it('should async filter a Collection that is an Array', async () =>
+    it('async filters a Collection that is an Array', async () =>
         await filterTask(Task.of, [0, 1])
             .run()
             .promise()
             .then(actual => expect(actual).toEqual([1])))
-    it('should async filter a Collection that is an Object', async () =>
+    it('async filters a Collection that is an Object', async () =>
         await filterTask(entry => Task.of(entry[1]), { a: 0, b: 1 })
             .run()
             .promise()
@@ -160,33 +160,33 @@ describe('filterTask()', () => {
 })
 
 describe('into()', () => {
-    it('should transform/filter/reduce an Array into a Number', () => {
+    it('transforms/filters/reduces an Array into a Number', () => {
 
         const transducer = compose(mapReducer(increment), filterReducer(lt(4)))
 
         expect(into(0, transducer, [1, 2, 3])).toEqual(5)
     })
-    it('should transform/filter/reduce an Object into a Number', () => {
+    it('transforms/filters/reduces an Object into a Number', () => {
 
         const transform = entry => increment(entry[1])
         const transducer = compose(mapReducer(transform), filterReducer(lt(4)))
 
         expect(into(0, transducer, { a: 1, b: 2, c: 3 })).toEqual(5)
     })
-    it('should transform/filter/reduce an Map into a Number', () => {
+    it('transforms/filters/reduces an Map into a Number', () => {
 
         const transform = entry => increment(entry[1])
         const transducer = compose(mapReducer(transform), filterReducer(lt(4)))
 
         expect(into(0, transducer, new Map([['a', 1], ['b', 2], ['c', 3]]))).toEqual(5)
     })
-    it('should transform/filter/reduce an Set into a Number', () => {
+    it('transforms/filters/reduces an Set into a Number', () => {
 
         const transducer = compose(mapReducer(increment), filterReducer(lt(4)))
 
         expect(into(0, transducer, new Set([1, 2, 3]))).toEqual(5)
     })
-    it('should transform/filter/reduce an String into a Number', () => {
+    it('transforms/filters/reduces an String into a Number', () => {
 
         const transducer = compose(mapReducer(char => char.charCodeAt(0)), filterReducer(lt(100)))
 
@@ -195,14 +195,14 @@ describe('into()', () => {
 })
 
 describe('toCompact()', () => {
-    it('should remove all falsey values from an Array', () => {
+    it('removes all falsey values from an Array', () => {
 
         const actual = toCompact([false, 0, undefined, null, NaN, '', 'not-empty'])
         const expected = ['not-empty']
 
         expect(actual).toEqual(expected)
     })
-    it('should remove all falsey values from an Object', () => {
+    it('removes all falsey values from an Object', () => {
 
         const actual = toCompact({
             a: false,
@@ -217,7 +217,7 @@ describe('toCompact()', () => {
 
         expect(actual).toEqual(expected)
     })
-    it('should remove all falsey values from a Map', () => {
+    it('removes all falsey values from a Map', () => {
 
         const actual = toCompact(new Map([
             ['a', false],
@@ -232,7 +232,7 @@ describe('toCompact()', () => {
 
         expect(actual).toEqual(expected)
     })
-    it('should remove all falsey values from a Set', () => {
+    it('removes all falsey values from a Set', () => {
 
         const actual = toCompact(new Set([false, 0, undefined, null, NaN, '', 'not-empty']))
         const expected = new Set(['not-empty'])
