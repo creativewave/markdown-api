@@ -7,8 +7,8 @@ const logReject = require('../lib/console/logReject')
 const validate = require('../lib/config/validate')
 const Watcher = require('watchpack')
 
-const included = ['dist', 'entitiesPerPage', 'force', 'hash', 'src', /*'type',*/ 'subVersion']
-const required = ['dist', 'src']
+const required = ['dist', 'entitiesPerPage', 'src']
+const included = [...required, 'force', 'hash', /*'type',*/ 'subVersion']
 
 /**
  * runBuild :: Configuration -> void
