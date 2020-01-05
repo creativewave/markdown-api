@@ -450,7 +450,8 @@ const getIndexesUpdate = (update, write = getIndexesToWrite(update)) =>
  */
 const getEntriesUpdate = config =>
     getDirectoriesFilesNames([join(config.src, config.type), join(config.dist, config.type)])
-        .orElse(addDirectoryFromError)
+        .orElse(error => addDirectoryFromError(error)
+            .chain(() => getDirectoriesFilesNames([join(config.src, config.type), join(config.dist, config.type)])))
         .orElse(logReject(`There was an error while reading '${config.type}' entries`))
         .map(([src, dist], add = difference(src, dist)) => ({
             add: getEntries(add, config).map(entry => ({ ...entry, hasEntityUpdate: true, hasIndexUpdate: true })),
