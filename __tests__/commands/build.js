@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 /**
  * How to write meaningfull tests of the `api build` command?
  *
