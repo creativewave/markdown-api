@@ -249,8 +249,9 @@ describe('build(config)', () => {
 
     it('rejects when (root) sources directory is empty', () => {
 
-        expect.assertions(1)
         fileSystem.src = {}
+
+        expect.assertions(1)
 
         return expect(build(config).run().promise())
             .rejects.toBe(`There was no sources found in ${config.src}`)
@@ -271,8 +272,9 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
 
     it('rejects when sources (type) directory is empty (nothing to build 1/2)', () => {
 
-        expect.assertions(1)
         fileSystem.src = { posts: {} }
+
+        expect.assertions(1)
 
         return expect(build.getEndpointsUpdate(config).run().promise())
             .rejects.toBe(`There was no '${config.type}' to build`)
@@ -280,9 +282,10 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
 
     it.each(['content.md', 'excerpt.md', 'index.js'])('rejects when a source entry is missing %s', file => {
 
-        expect.assertions(1)
         fileSystem.src = { posts: { entry: files.src.entry } }
         delete files.src.entry[file]
+
+        expect.assertions(1)
 
         return expect(build.getEndpointsUpdate(config).run().promise())
             .rejects.toBe(`There was an error while getting '${config.type}' entities\n\n`)
@@ -290,9 +293,10 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
 
     it('rejects when there is only a single source entry to build that is a draft (nothing to build 2/2)', () => {
 
-        expect.assertions(1)
         files.src.entry['index.js'].content.draft = true
         fileSystem.src = { posts: { entry: files.src.entry } }
+
+        expect.assertions(1)
 
         return expect(build.getEndpointsUpdate(config).run().promise())
             .rejects.toBe(`There was no '${config.type}' to build`)
