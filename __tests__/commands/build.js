@@ -260,6 +260,8 @@ describe('build(config)', () => {
 
 describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
 
+    const requiredFiles = ['content.md', 'index.js', 'excerpt.md']
+
     // TODO: it('creates endpoints (root) directory if missing', () => {})
     it('creates (type) endpoints directory if missing', () => {
 
@@ -280,7 +282,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
             .rejects.toBe(`There was no '${config.type}' to build`)
     })
 
-    it.each(['content.md', 'excerpt.md', 'index.js'])('rejects when a source entry is missing %s', file => {
+    it.each(requiredFiles)('rejects when a source entry is missing %s', file => {
 
         fileSystem.src = { posts: { entry: files.src.entry } }
         delete files.src.entry[file]
@@ -482,6 +484,19 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
         }
 
         return expectUpdate({ config, entries: { update: [entry] } })
+    })
+
+    it.each(requiredFiles)('rejects when a source entry with a corresponding distribution entry, is missing %s', () => {
+
+        delete files.src.entry['content.md']
+        fileSystem.src = { posts: { entry: files.src.entry } }
+        fileSystem.dist.api.posts.entry = files.dist.entities.entry
+        fileSystem.dist.static.posts = { entry: files.dist.static.entry }
+
+        expect.assertions(1)
+
+        return expect(build.getEndpointsUpdate(config).run().promise())
+            .rejects.toBe(`There was an error while getting updated '${config.type}'\n\n`)
     })
 
     it('resolves Update to build endpoints after adding an entry [with cache]', () => {
