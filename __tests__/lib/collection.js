@@ -38,6 +38,8 @@ describe('empty()', () => {
 describe('concat()', () => {
     it('appends a new value into an Array', () =>
         expect(concat([], 1)).toEqual([1]))
+    it('appends an Array into an Array', () =>
+        expect(concat([], [1])).toEqual([[1]]))
     it('appends a new value into an Object', () =>
         expect(concat({}, ['a', 1])).toEqual({ a: 1 }))
     it('appends a new value into a Map', () =>
