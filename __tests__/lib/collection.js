@@ -1,20 +1,41 @@
 
+const chain = require('../../lib/collection/chain')
 const compose = require('lodash/fp/compose')
 const concat = require('../../lib/collection/concat')
 const empty = require('../../lib/collection/empty')
+const filter = require('../../lib/collection/filter')
 const filterTask = require('../../lib/collection/filterTask')
 const into = require('../../lib/collection/into')
 const map = require('../../lib/collection/map')
 const mapTask = require('../../lib/collection/mapTask')
 const mapReducer = require('../../lib/collection/mapReducer')
+const merge = require('../../lib/collection/merge')
 const filterReducer = require('../../lib/collection/filterReducer')
 const Task = require('folktale/concurrency/task')
 const toCompact = require('../../lib/collection/toCompact')
+const toFlat = require('../../lib/collection/toFlat')
 const transduce = require('../../lib/collection/transduce')
 
 const nextChar = char => String.fromCharCode(char.charCodeAt(0) + 1)
 const increment = i => ++i
 const lt = max => i => i < max
+const nest = collection => {
+    // eslint-disable-next-line no-prototype-builtins
+    if (Set.prototype.isPrototypeOf(collection)) {
+        return value => collection.add(value)
+    }
+    return value => collection.concat(value)
+}
+const swap = collection => {
+    // eslint-disable-next-line no-prototype-builtins
+    if (Map.prototype.isPrototypeOf(collection)) {
+        return ([prop, value]) => collection.set(value, prop)
+    }
+    return ([prop, value]) => {
+        collection[value] = prop
+        return collection
+    }
+}
 
 describe('empty()', () => {
     it('creates an empty representation of a given Array', () =>
@@ -82,6 +103,19 @@ describe('map()', () => {
         expect(map(increment, new Set([1, 2]))).toEqual(new Set([2, 3])))
     it('transforms a Collection that is a String', () =>
         expect(map(nextChar, 'enn')).toEqual('foo'))
+})
+
+describe('filter()', () => {
+    it('filters an Array', () =>
+        expect(filter(lt(2), [1, 2])).toEqual([1]))
+    it('filters a Set', () =>
+        expect(filter(lt(2), new Set([1, 2]))).toEqual(new Set([1])))
+    it('filters an Object', () =>
+        expect(filter(([, value]) => lt(2)(value), { a: 1, b: 2 })).toEqual({ a: 1 }))
+    it('filters a Map', () =>
+        expect(filter(([, value]) => lt(2)(value), new Map([['a', 1], ['b', 2]]))).toEqual(new Map([['a', 1]])))
+    it('filters a String', () =>
+        expect(filter(char => char === 'o', 'foo')).toEqual('oo'))
 })
 
 describe('transduce()', () => {
@@ -241,4 +275,37 @@ describe('toCompact()', () => {
 
         expect(actual).toEqual(expected)
     })
+})
+
+describe('merge()', () => {
+    it('merges two Array', () =>
+        expect(merge([1], [2, 3])).toEqual([1, 2, 3]))
+    it('merges two Set', () =>
+        expect(merge(new Set([1]), new Set([2, 3]))).toEqual(new Set([1, 2, 3])))
+    it('merges two Object', () =>
+        expect(merge({ a: 1, b: 2 }, { a: 2 })).toEqual({ a: 2, b: 2 }))
+    it('merges two Map', () =>
+        expect(merge(new Map([['a', 1], ['b', 2]]), new Map([['a', 2]]))).toEqual(new Map([['a', 2], ['b', 2]])))
+})
+
+describe('chain', () => {
+    it('transforms then flatten an Array', () =>
+        expect(chain(compose(nest([]), increment), [1])).toEqual([1].flatMap(compose(nest([]), increment))))
+    it('transforms then flatten a Set', () =>
+        expect(chain(compose(nest(new Set()), increment), new Set([1]))).toEqual(new Set([2])))
+    it('transforms then flatten an Object', () =>
+        expect(chain(swap({}), { a: 1 })).toEqual({ 1: 'a' }))
+    it('transforms then flatten a Map', () =>
+        expect(chain(swap(new Map()), new Map([['a', 1]]))).toEqual(new Map([[1, 'a']])))
+})
+
+describe('toFlat()', () => {
+    it('transforms/filters then flatten an Array', () =>
+        expect(toFlat(mapReducer(compose(nest([]), increment)), [1, 2])).toEqual([2, 3]))
+    it('transforms/filters then flatten a Set', () =>
+        expect(toFlat(mapReducer(compose(nest(new Set()), increment)), new Set([1, 2]))).toEqual(new Set([2, 3])))
+    it('transforms/filters then flatten an Object', () =>
+        expect(toFlat(mapReducer(swap({})), { a: 1 })).toEqual({ 1: 'a' }))
+    it('transforms/filters then flatten a Map', () =>
+        expect(toFlat(mapReducer(swap(new Map())), new Map([['a', 1]]))).toEqual(new Map([[1, 'a']])))
 })
