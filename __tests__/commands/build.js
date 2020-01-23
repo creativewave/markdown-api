@@ -27,15 +27,16 @@ const Result = require('folktale/result')
 /**
  * expectUpdate :: Update -> Promise Error void
  *
- * Update => { entries: EntriesUpdate, indexes: IndexesUpdate }
+ * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, manifest: Manifest }
  *
  * It should help asserting against expected `EntriesUpdate` and `IndexesUpdate`
  * by merging them in a default value.
  */
-const expectUpdate = ({ entries = {}, indexes = {}, config }) => {
+const expectUpdate = ({ config, entries = {}, indexes = {}, manifest }) => {
     const expected = {
         entries: { add: [], remove: [], update: [], ...entries },
         indexes: { cache: {}, remove: [], write: {}, ...indexes },
+        manifest,
     }
     return build.getEndpointsUpdate(config)
         .map(actual => {
@@ -43,6 +44,7 @@ const expectUpdate = ({ entries = {}, indexes = {}, config }) => {
             expect(actual.indexes.write).toEqual(expected.indexes.write)
             expect(actual.indexes.remove).toEqual(expected.indexes.remove)
             expect(actual.indexes.cache).toEqual(expected.indexes.cache)
+            expect(actual.manifest).toEqual(expected.manifest)
         })
         .run()
         .promise()
@@ -99,8 +101,6 @@ const fsIO = type => (path, options, callback = options) => {
 
 /**
  * getEntryFilesDescriptor :: Entity -> EntryFilesDescriptor
- *
- * Implementation => (Path -> Options|Callback -> Callback?) -> a
  *
  * It should help creating entry files descriptions in the virtual file system.
  */
@@ -875,7 +875,6 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
         })
     })
 
-    // TODO: add an assertion to match against Update.manifest
     it('resolves Update to build endpoints after adding an entry [with hash]', () => {
 
         config.hash = true
@@ -910,6 +909,14 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
             config,
             entries: { add: [entry] },
             indexes: { cache: indexes, write: indexes },
+            manifest: {
+                categories: getHash('alltest'),
+                entities: { [entryName]: entityIndex.hash },
+                indexes: {
+                    all: { '1': pages['1'].hash },
+                    test: { '1': pages['1'].hash },
+                },
+            },
         })
     })
 
