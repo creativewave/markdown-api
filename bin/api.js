@@ -2,7 +2,7 @@
 
 'use strict'
 
-require('commander')
+require('../lib/command')('api', 'Manage (CRUD) source entries and build distribution endpoints.')
     .command('build', 'build endpoints')
     .command('add', 'add new entry')
     .command('remove', 'remove an entry and its endpoints')

@@ -1,7 +1,6 @@
 
-const cli = require('commander')
+const cli = require('../lib/command')
 
-cli
-    .name('api stats')
+cli('api stats', 'Output resources statistics (not implemented yet).')
     .action(() => console.log('TODO'))
     .parse(process.argv)

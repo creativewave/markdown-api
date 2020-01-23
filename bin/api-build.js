@@ -1,26 +1,15 @@
 
 const build = require('../commands/build.js')
-const cli = require('commander')
-const config = require('../lib/config')
-const getConfig = require('../lib/config/get')
-const logReject = require('../lib/console/logReject')
-const validate = require('../lib/config/validate')
+const cli = require('../lib/command')
+const parameter = require('../lib/command/parameter')
 const Watcher = require('watchpack')
-
-const required = ['dist', 'entitiesPerPage', 'src']
-const included = [...required, 'force', 'hash', /*'type',*/ 'subVersion']
 
 /**
  * runBuild :: Configuration -> void
- *
- * TODO(fix): reject task if `config.hash` is `false` and `config.version` is
- * `true`.
  */
-const runBuild = userConfig => {
+const runBuild = args => {
     console.time('API endpoints built in')
-    validate(required, getConfig(included)({ ...config, ...userConfig }))
-        .orElse(logReject('Invalid parameter'))
-        .chain(build)
+    build(args)
         .map(results => Object.entries(results).map(([type, { entities, indexes }]) => {
             console.group(type)
             console.table({ entities })
@@ -40,17 +29,16 @@ const runWatcher = (src, handleChange) => {
     watcher.on('aggregated', handleChange)
 }
 
-cli
-    .name('api build')
-    .option('-s, --src <path>', 'path to sources directory (required)', config.src)
-    .option('-d, --dist <path>', 'path to distribution directory (required)', config.dist)
-    .option('-f, --force', 'build without checking if sources have been updated', config.force)
-    .option('-p, --entitiesPerPage <number>', 'entities per (index) page', config.entitiesPerPage)
-    .option('-h, --hash', 'create endpoints using hashes for long term cache', config.hash)
-    .option('-S, --subVersion', 'keep previous generated (JSON) endpoints', config.subVersion)
-    .option('-w, --watch', 'automatically build on change', config.watch)
-    .action(config => {
-        config.watch && runWatcher(config.src, () => runBuild(config))
-        runBuild(config)
+cli('api build', 'Create/remove/update endpoints.')
+    .parameter(parameter.dist)
+    .parameter(parameter.entitiesPerPage)
+    .parameter(parameter.force)
+    .parameter(parameter.hash)
+    .parameter(parameter.src)
+    .parameter(parameter.subVersion)
+    .parameter(parameter.watch)
+    .action(args => {
+        args.watch && runWatcher(args.src, () => runBuild(args))
+        runBuild(args)
     })
     .parse(process.argv)
