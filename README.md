@@ -220,18 +220,18 @@ It's a kind of search interface on top of a low level JavaScript API made to han
 Parameters:
 
 ```
-  -s, --src <src>        path to sources directory (required) (default: "./src/api")
-  -d, --dist <dist>      path to distribution directory (required) (default: "./dist/api")
-  -f, --force            build without checking if sources have been updated
-  -p, --entitiesPerPage  entities per (index) page (default: 10)
-  -h, --hash             create endpoints using hashes for long term cache (default: false)
-  -S, --subVersion       keep previous generated (JSON) endpoints (default: false)
-  -w, --watch            automatically build on change
+  -s, --src <src>          path to sources directory (required) (default: "./src/api")
+  -d, --dist <dist>        path to distribution directory (required) (default: "./dist/api")
+  -f, --force              build without checking if sources have been updated
+  -p, --entities-per-page  entities per (index) page (default: 10)
+  -h, --hash               create endpoints using hashes for long term cache (default: false)
+  -S, --sub-version        keep previous generated (JSON) endpoints (default: false)
+  -w, --watch              automatically build on change
 ```
 
 Check [doc/long-term-cache](doc/long-term-cache.md) to learn more about `config.hash`, long term caching of endpoints, `config.subVersion`, and preserving endpoints versions between build updates.
 
-`config.subVersion` can't be activated without `config.hash` being `true`.
+`--no-hash` is ignored with `--sub-version`.
 
 ### `api stats`
 
