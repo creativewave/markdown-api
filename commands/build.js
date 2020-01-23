@@ -8,9 +8,12 @@ const addFile = require('../lib/fs/addFile')
 const addStaticDirs = require('../lib/entry/addStaticDirs')
 const capitalize = require('lodash/fp/capitalize')
 const categorize = require('../lib/categorize')
+const chain = require('../lib/collection/chain')
 const compose = require('lodash/fp/compose')
+const concat = require('../lib/collection/concat')
 const difference = require('lodash/fp/difference')
 const every = require('lodash/fp/every')
+const filter = require('../lib/collection/filter')
 const filterReducer = require('../lib/collection/filterReducer')
 const find = require('lodash/fp/find')
 const flatten = require('lodash/fp/flatten')
@@ -26,10 +29,10 @@ const join = require('../lib/path/getJoinedPath')
 const log = require('../lib/console/log')
 const logReject = require('../lib/console/logReject')
 const map = require('../lib/collection/map')
+const mapReducer = require('../lib/collection/mapReducer')
 const mapTask = require('../lib/collection/mapTask')
 const mapValues = require('lodash/fp/mapValues')
 const Maybe = require('folktale/maybe')
-const merge = require('lodash/fp/merge')
 const paginate = require('../lib/paginate')
 const prop = require('lodash/fp/prop')
 const removeDirectories = require('../lib/fs/removeDirectories')
@@ -44,30 +47,32 @@ const setEntities = require('../lib/entry/setEntities')
 const setStaticDirs = require('../lib/entry/setStaticDirs')
 const setVersion = require('../lib/entry/setVersion')
 const Task = require('folktale/concurrency/task')
+const toFlat = require('../lib/collection/toFlat')
+const transduce = require('../lib/collection/transduce')
 
 /**
- * setManifestEndpoint :: Manifest -> Task Error Path
+ * setManifestEndpoint :: (Manifest -> Path) -> Task Error Path
  */
 const addManifestEndpoint = (manifest, { distIndexes }) =>
     addFile(join(distIndexes, 'manifest.json'), JSON.stringify(manifest))
         .orElse(logReject('There was an error while trying to write manifest'))
 
 /**
- * addCategoriesIndex :: Path -> CategoriesIndex -> Task Error Path
+ * addCategoriesIndex :: (Path -> CategoriesIndex -> Maybe String) -> Task Error Path
  */
 const addCategoriesIndex = (dir, index, hash) =>
     addFile(join(dir, hash.map(hash => `index-${hash}.json`).getOrElse('index.json')), JSON.stringify(index))
         .orElse(logReject('There was an error while trying to write categories index'))
 
 /**
- * addEntitiesIndex :: Path -> Index -> String -> Boolean -> Task Error Path
+ * addEntitiesIndex :: (Path -> Index -> Maybe String -> Boolean) -> Task Error Path
  */
 const addEntitiesIndex = (dir, index, hash, subVersion) =>
     addDirectory(dir, { override: !subVersion })
         .chain(() => addFile(join(dir, hash.map(hash => `index-${hash}.json`).getOrElse('index.json')), JSON.stringify(index)))
 
 /**
- * addEntitiesIndexes :: Path -> Indexes -> IndexManifest -> Boolean -> Task Error [[Path]]
+ * addEntitiesIndexes :: (Path -> Indexes -> Maybe IndexManifest -> Boolean) -> Task Error [[Path]]
  *
  * Indexes => { [IndexName]: Pages }
  * Pages   => { [Page]: Index }
@@ -82,7 +87,7 @@ const addEntitiesIndexes = (dir, indexes, manifest, subVersion) =>
     Object.entries(indexes))
 
 /**
- * setIndexesEndpoints :: IndexesUpdate -> Configuration -> Manifest -> Task Error IndexesResults
+ * setIndexesEndpoints :: (IndexesUpdate -> Configuration -> Maybe Manifest) -> Task Error IndexesResults
  *
  * IndexesUpdate => { cache: Indexes, remove: [Path], write: Indexes }
  * Indexes => { [IndexName]: Pages }
@@ -111,15 +116,12 @@ const setIndexesEndpoints = ({ cache, remove, write }, { distIndexes, subVersion
             .apply(removeDirectories(remove))
             .apply(addCategoriesIndex(
                 distIndexes,
-                Object.keys(cache).reduce((categories, category) => ({
-                    ...categories,
-                    [category]: 'all' === category ? 'All' : capitalize(category),
-                }), {}),
+                map(([category]) => [category, 'all' === category ? 'All' : capitalize(category)], cache),
                 manifest.map(prop('categories'))))
             .apply(addFile(join(distIndexes, 'cache.json'), JSON.stringify(cache)))
 
 /**
- * setEntitiesEndpoints :: EntriesUpdate -> Configuration -> Task Error EntitiesResults
+ * setEntitiesEndpoints :: (EntriesUpdate -> Configuration) -> Task Error EntitiesResults
  *
  * EntriesUpdate => { add: [Entry], remove: [Entry], update: [Entry] }
  * Configuration => {
@@ -181,37 +183,35 @@ const setEndpoints = ({ entries, indexes, manifest, config }) =>
  * IndexesUpdate => { cache: Indexes, remove: [Path], write: Indexes }
  * Indexes => { [IndexName]: Pages }
  * Pages => { [Page]: Index }
- * Index => { hash: String, entities: [EntityIndex], prev: Path, next: Path }
+ * Index => { hash: Hash, entities: [EntityIndex], prev: Path, next: Path }
  * Manifest => {
- *   categories: String,
+ *   categories: Hash,
  *   entities: EntityManifest,
  *   indexes: IndexManifest,
  * }
- * EntityManifest => { [EntryName]: String }
- * IndexManifest => { [IndexName]: { [Page]: String } }
+ * EntityManifest => { [EntryName]: Hash }
+ * IndexManifest => { [IndexName]: { [Page]: Hash } }
  *
- * It should collect `Index.hash`es.
- * It should collect `EntityIndex.hash`es.
+ * It should create a `Hash` reduced from category names, and collect `Hash` of
+ * each `Index` and `Entity`.
  */
 const getManifestUpdate = update => ({
     ...update,
     manifest: {
-        categories: Object.keys(update.indexes.cache.all).reduce((hash, category) => `${hash}${getHash(category)}`, ''),
-        entities: Object.values(update.indexes.cache.all).reduce(
-            (manifest, pages) => Object.values(pages).reduce(
-                (manifest, { hash, name }) => merge({ [name]: hash }, manifest),
-                manifest),
-            {}),
-        indexes: Object.entries(update.indexes.cache).reduce(
-            (manifest, [category, pages]) => Object.entries(pages).reduce(
-                (manifest, [page, { hash }]) => merge({ [category]: { [page]: hash } }, manifest),
-                { ...manifest, [category]: {} }),
-            {}),
+        categories: getHash(into('', mapReducer(([category]) => category), update.indexes.cache)),
+        entities: transduce(
+            mapReducer(([, page]) => page),
+            update.indexes.cache.all,
+            {},
+            (entities, page) => into(entities, mapReducer(entity => [entity.name, entity.hash]), page.entities)),
+        indexes: map(
+            ([category, pages]) => [category, map(([page, index]) => [page, index.hash], pages)],
+            update.indexes.cache),
     },
 })
 
 /**
- * reduceIndexes :: { [IndexName]: [EntityIndex] } -> Update -> [IndexName, { Page: Index }] -> Update
+ * reduceIndexes :: { [IndexName]: [EntityIndex] } -> (Update -> [IndexName, { Page: Index }]) -> Update
  *
  * Update => { config: Configuration, entries: EntriesUpdate, indexes: IndexesUpdate }
  * IndexesUpdate => { cache: Indexes, remove: [Path], write: Indexes }
@@ -233,10 +233,7 @@ const getManifestUpdate = update => ({
 const reduceIndexes = write => (update, [category, pages]) => {
 
     // (1) Get flattened `EntityIndex`es (entities for short)
-    const entities = Object.values(pages).flatMap(prop('entities'))
-    // TODO: implement and check if the following works
-    // Single iteration using toArray, ie. transduce(objectTransducer, push, [], arrayOfObjects):
-    // const entities = toArray(mapReducer(prop('entities')), Object.values(pages))
+    const entities = chain(({ entities }) => entities, Object.values(pages))
 
     // Get indexes (numbers) of the first entity to write and remove (or -1 if any)
     const firstEntityIndex = {
@@ -259,9 +256,9 @@ const reduceIndexes = write => (update, [category, pages]) => {
     }
 
     // (2) Get entities slice from the first to write/remove
-    const firstEntityIndexUpdate = -1 < firstEntityIndex.write || -1 < firstEntityIndex.remove
-        ? -1 < firstEntityIndex.write ? firstEntityIndex.write : firstEntityIndex.remove
-        : Math.min(firstEntityIndex.write, firstEntityIndex.remove)
+    const firstEntityIndexUpdate = (-1 < firstEntityIndex.write && -1 < firstEntityIndex.remove)
+        ? Math.min(firstEntityIndex.write, firstEntityIndex.remove)
+        : -1 < firstEntityIndex.write ? firstEntityIndex.write : firstEntityIndex.remove
     const firstPage = Math.ceil(firstEntityIndexUpdate / update.config.entitiesPerPage)
     let nextEntities = entities.slice((firstPage - 1) * update.config.entitiesPerPage)
 
@@ -301,19 +298,14 @@ const reduceIndexes = write => (update, [category, pages]) => {
 
     // (7) Diff `nextPages` against `cache` (previous pages) to remove untouched pages
     // TODO: use `safeProp` to read pages[page].entities[idx].name and write[category]
-    // TODO: try to abstract a curried `isStaleEntityIndex` receiving cache and write Maybes
-    nextPages = Object.entries(nextPages).reduce(
-        (finalNextPages, [page, index]) =>
-            index.entities.find((entity, idx) =>
-                // Does entities have been introduced/moved inside or removed from the current page?
-                (!pages[page] || pages[page].entities[idx].name !== entity.name)
-                // ...or does entities have been updated inside the current page?
-                || (write[category] && write[category].find(({ name }) => name === entity.name)))
-                // > If it is a stale page, rewrite it (filter it in the final pages to write).
-                ? { ...finalNextPages, [page]: index }
-                // > Else don't (filter it out from the final pages to write).
-                : finalNextPages,
-        {})
+    // TODO: abstract a curried `isStaleEntityIndex` that receives cache and return Maybe
+    nextPages = filter(
+        ([page, index]) => index.entities.find((entity, idx) =>
+            // Does entities have been added/moved/removed inside/from the current page?
+            (!pages[page] || pages[page].entities[idx].name !== entity.name)
+            // ...or does entities have been updated inside the current page?
+            || (write[category] && write[category].find(({ name }) => name === entity.name))),
+        nextPages)
 
     update.indexes.write[category] = nextPages
     update.indexes.cache[category] = nextCache
@@ -353,33 +345,19 @@ const getIndexesCache = ({ distIndexes, force }) => force
  * EntriesUpdate => { add: [Entry], remove: [Entry], update: [Entry] }
  * Entry => { ...Entry, Entity }
  *
- * It should filter out `Update.entries.remove`.
- * It should filter in `Update.entries.update` with `.hasIndexUpdate` or if
- * `Update.config.force`.
+ * It should filter out removed entries, then it should filter in entries that
+ * `hasIndexUpdate` or all of them if `Update.config.force`.
  */
-const getIndexesToWrite = update =>
-    categorize(sortBy('date', Object.entries(update.entries).reduce(
-        (indexes, [op, entries]) => {
-            if ('remove' === op) {
-                return indexes
-            }
-            if ('add' === op || update.config.force) {
-                return [
-                    ...indexes,
-                    // eslint-disable-next-line no-unused-vars
-                    ...entries.reduce((indexes, { entity: { content, ...index } }) => [...indexes, index], []),
-                ]
-            }
-            return [
-                ...indexes,
-                ...entries.reduce(
-                    // eslint-disable-next-line no-unused-vars
-                    (indexes, { entity: { content, ...index } = {}, hasIndexUpdate }) =>
-                        hasIndexUpdate ? [...indexes, index] : indexes,
-                    []),
-            ]
-        },
-        [])))
+const getIndexesToWrite = update => categorize(sortBy('date', toFlat(
+    compose(
+        filterReducer(([op]) => op !== 'remove'),
+        mapReducer(([, entries]) => toFlat(
+            compose(
+                filterReducer(entry => update.config.force || entry.hasIndexUpdate),
+                // eslint-disable-next-line no-unused-vars
+                mapReducer(({ entity: { content, ...index } }) => index)),
+            entries))),
+    update.entries)))
 
 /**
  * getIndexesUpdate :: Update -> Update
@@ -390,7 +368,7 @@ const getIndexesToWrite = update =>
  *
  * It should assign an `IndexesUpdate` to `Update` that describes indexes to
  * write (excerpt contents) and remove (only paths), as well as a flat (cache)
- * version that will used to detect index changes of the next build.
+ * version that will be used to detect index changes of the next build.
  *
  * If not empty, it should reduce a cached indexes tree and set:
  * - `update.indexes.cache`  with the next indexes tree
@@ -401,13 +379,12 @@ const getIndexesToWrite = update =>
  * - `update.indexes.write`  with paginated `write` indexes
  *
  * Memo: indexes are updated when an entry is added, updated, or removed.
- * Memo: a single file caching the indexes tree is reduced to avoid reading each
- * `Index` (file) of each `Page` of each `IndexName`.
- *
- * TODO(refactoring): transduce write into update with indexes.
+ * Memo: a single cache file storing the indexes tree is used as a seed to avoid
+ * re-writing each `Index` (file) of each `Page` of each `IndexName`.
  */
-const getIndexesUpdate = (update, write = getIndexesToWrite(update)) =>
-    Object.keys(write).reduce(
+const getIndexesUpdate = update => {
+    const write = getIndexesToWrite(update)
+    return Object.keys(write).reduce(
         (update, category) => {
             if (!update.indexes.cache[category]) {
                 update.indexes.cache[category] = paginate(
@@ -424,6 +401,7 @@ const getIndexesUpdate = (update, write = getIndexesToWrite(update)) =>
         getIndexesCache(update.config)
             .map(cache => reduceIndexesUpdate(update, cache, write))
             .getOrElse({ ...update, indexes: { cache: {}, remove: [], write: {} } }))
+}
 
 /**
  * getEntriesUpdate :: Configuration -> Task Error Update
@@ -441,23 +419,28 @@ const getIndexesUpdate = (update, write = getIndexesToWrite(update)) =>
  * Update => { config: Configuration, entries: EntriesUpdate }
  * EntriesUpdate => { add: [Entry], remove: [Entry], update: [Entry] }
  *
- * TODO(feature: use `slug` for endpoint path): think if this feature should be
- * removed or not, as each source entry `index.js` would need to be read to get
- * its `slug` and if different than its directory name, diff it against entries
- * names from the distribution directory.
- *
- * TODO(refactoring): transduce entries names into update with entries update.
+ * TODO(feature: use `slug` in endpoint path): figure out if it should be impl.
+ * or not, since each source entry would have to be read (its `index.js`) to get
+ * its `slug` and use it to find a match in entries distribution directory when
+ * it doesn't match the source directory name.
  */
 const getEntriesUpdate = config =>
     getDirectoriesFilesNames([join(config.src, config.type), join(config.dist, config.type)])
         .orElse(error => addDirectoryFromError(error)
             .chain(() => getDirectoriesFilesNames([join(config.src, config.type), join(config.dist, config.type)])))
         .orElse(logReject(`There was an error while reading '${config.type}' entries`))
-        .map(([src, dist], add = difference(src, dist)) => ({
-            add: getEntries(add, config).map(entry => ({ ...entry, hasEntityUpdate: true, hasIndexUpdate: true })),
-            old: getEntries(difference(src, add), config),
-            remove: getEntries(difference(dist, src), config),
-        }))
+        .map(([src, dist]) => {
+            const add = difference(src, dist)
+            return {
+                add: getEntries(add, config).map(entry => ({
+                    ...entry,
+                    hasEntityUpdate: true,
+                    hasIndexUpdate: true,
+                })),
+                old: getEntries(difference(src, add), config),
+                remove: getEntries(difference(dist, src), config),
+            }
+        })
         .chain(({ add, old, remove }) => config.force
             ? Task.of({
                 add,
@@ -476,22 +459,24 @@ const getEntriesUpdate = config =>
             if (op === 'remove') {
                 return Task.of([op, entries])
             }
-            return entries.reduce(
-                (task, entry) => (entry.hasIndexUpdate || entry.hasEntityUpdate)
-                    ? task.and(getEntity(entry)).map(([[op, entries], entity]) => {
+            return transduce(
+                mapReducer(entry => (entry.hasIndexUpdate || entry.hasEntityUpdate)
+                    ? getEntity(entry).map(entity => {
                         if (entity.draft) {
-                            return [op, entries]
+                            return { entity }
+                        } else if (config.version) {
+                            return setVersion(setHash({ ...entry, entity }))
+                        } else if (config.hash) {
+                            return setHash({ ...entry, entity })
                         }
-                        if (config.hash) {
-                            if (config.version) {
-                                return [op, entries.concat(setVersion(setHash({ ...entry, entity })))]
-                            }
-                            return [op, entries.concat(setHash({ ...entry, entity }))]
-                        }
-                        return [op, entries.concat({ ...entry, entity })]
+                        return { ...entry, entity }
                     })
-                    : Task.of([op, entries]),
-                Task.of([op, []])).orElse(logReject(`There was an error while getting '${config.type}' entities`))
+                    : Task.of(entry)),
+                entries,
+                Task.of([op, []]),
+                (entries, entry) => entries.and(entry).map(([[op, entries], entry]) =>
+                    (entry.entity && entry.entity.draft) ? [op, entries] : [op, concat(entries, entry)]))
+                .orElse(logReject(`There was an error while getting '${config.type}' entities`))
         }))
         .chain(entries => isEmpty(Object.values(entries).flat())
             ? Task.rejected(log('info', `There was no '${config.type}' to build`))
@@ -517,11 +502,11 @@ const getEntriesUpdate = config =>
  *   manifest: Manifest,
  * }
  *
- * It should return an `Update` that describes file system operations that have
- * to be run to build endpoints from the corresponding resource type:
+ * It should return an `Update` that describes file system operations to run to
+ * build endpoints of the corresponding entries type:
+ * - a configuration to build those endpoints
  * - a collection of entries to add/remove/update
  * - a collection of indexes to remove/write (as well as a flat/cached version)
- * - the configuration to build those endpoints
  */
 const getEndpointsUpdate = compose(
     map(update => update.config.hash ? getManifestUpdate(update) : update),
@@ -558,13 +543,17 @@ const build = config =>
         .chain(types => isEmpty(types)
             ? Task.rejected(log('error', `There was no sources found in ${config.src}`))
             : Task.of(types))
-        .chain(types => types.reduce(
-            (build, type) => build
-                .and(getEndpointsUpdate({ ...config, distIndexes: join(config.dist, 'categories', type), type })
+        .chain(types => transduce(
+            mapReducer(type => [
+                type,
+                getEndpointsUpdate({ ...config, distIndexes: join(config.dist, 'categories', type), type })
                     .chain(setEndpoints)
-                    .orElse(() => Task.of())) // Nothing to build
-                    .map(([results, result]) => result ? { ...results, [type]: result } : results),
-            Task.of({})))
+                    .orElse(() => Task.of(/* Nothing to build */)),
+            ]),
+            types,
+            Task.of({}),
+            (build, [type, update]) => build.and(update).map(([results, result]) =>
+                result ? concat(results, [type, result]) : results)))
 
 module.exports = Object.assign(
     build, {

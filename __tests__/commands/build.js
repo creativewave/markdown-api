@@ -914,6 +914,6 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
     })
 
     // TODO: it should return Update to build endpoints after adding multiple entries [with hash]
-    // TODO: it should reject when config.subVersion is true and config.hash is false
+    // TODO: it should override config.hash to true if config.subVersion is true
     // TODO: it should keep old endpoints when config.subVersion is true
 })
