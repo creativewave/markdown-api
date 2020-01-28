@@ -65,9 +65,12 @@ const safeRequireMock = path => {
             .action(actionArgs => args = actionArgs)
             .parse(argv.concat(['remove', '-c', '1']))
         return Result.Ok()
+    } else if (path.endsWith('api.config')) {
+        return Result.Ok(userConfigFile)
     }
     return Result.Error()
 }
+const userConfigFile = { force: true }
 
 let args
 let cli
@@ -210,6 +213,15 @@ it('calls command action with boolean: true [def: --no-boolean][input: default]'
         .parse(argv)
 
     expect(args).toEqual({ boolean: true })
+})
+it('calls command action with a parameter that uses default value from user config file', () => {
+
+    cli('api')
+        .parameter(require('../../lib/command/parameter').force)
+        .action(actionArgs => args = actionArgs)
+        .parse(argv)
+
+    expect(args).toEqual({ force: true })
 })
 it('calls help command action [single command]', () => {
 
