@@ -16,11 +16,13 @@ const reducer = (collection, value) => {
     return collection
 }
 
+const createArray = () => [...Array(100)].map((_, i) => i)
+
 benchmark({
     name: 'into()',
     units: {
-        current: () => into([], transducer, [...Array(100)].map((_, i) => i)),
-        native: () => [...Array(100)].map((_, i) => i).reduce(reducer, []),
-        nativeAlt: () => [...Array(100)].map((_, i) => i).map(increment).filter(isEven),
+        current: () => into([], transducer, createArray()),
+        native: () => createArray().reduce(reducer, []),
+        nativeAlt: () => createArray().map(increment).filter(isEven),
     },
 })
