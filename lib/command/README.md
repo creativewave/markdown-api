@@ -15,7 +15,7 @@ const configuration = {
     rules: [isGt1],
 }
 const parameter = {
-    default: 'foo',
+    default: 'foo', // Automatically computed when parameter is a boolean
     definition: '-p, --parameter <string>',
     description: 'Parameter (single argument)',
 }
@@ -92,7 +92,7 @@ A boolean parameter is:
 | `false` | `-b, --boolean`      | `--no-boolean`    |
 | `false` | `-b, --boolean`      | (none)            |
 
-A parameter alias should be 1 or 2 two characters long, therefore its name should be at least 3 characters long.
+A parameter alias should be 1 character long, therefore its name should be at least 2 characters long.
 
 `<typeHint>` is required to:
 - distinguish a boolean parameter from other parameters that expect an input value
