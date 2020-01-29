@@ -38,6 +38,8 @@ const swap = collection => {
 }
 
 describe('empty()', () => {
+    it('throws when it receives a Collection that is not a Monoid, an Iterable, a Number, or a Boolean', () =>
+        expect(() => empty(Symbol())).toThrow('Unable to create an empty `symbol`'))
     it('creates an empty representation of a given Array', () =>
         expect(empty(['foo'])).toEqual([]))
     it('creates an empty representation of a given Set', () =>
@@ -57,6 +59,8 @@ describe('empty()', () => {
 })
 
 describe('concat()', () => {
+    it('throws when it receives a Collection that is not a SemiGroup, an Iterable, a Number, or a Boolean', () =>
+        expect(() => concat(Symbol(), 1)).toThrow('Unable to concatenate a value into a type `symbol`'))
     it('appends a new value into an Array', () =>
         expect(concat([], 1)).toEqual([1]))
     it('appends an Array into an Array', () =>
@@ -119,6 +123,8 @@ describe('filter()', () => {
 })
 
 describe('transduce()', () => {
+    it('throws when it receives a Collection that is not a Foldable or an Iterable', () =>
+        expect(() => transduce(mapReducer(x => x), true)).toThrow('Unable to transduce a `boolean`'))
     it('transforms and filters an Array', () => {
 
         const transducer = compose(mapReducer(increment), filterReducer(lt(3)))
