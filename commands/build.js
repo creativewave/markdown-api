@@ -81,7 +81,7 @@ const addEntitiesIndex = (dir, index, hash, subVersion) =>
 const addEntitiesIndexes = (dir, indexes, manifest, subVersion) =>
     mapTask(([category, pages]) =>
         mapTask(([page, index]) =>
-            addEntitiesIndex(join(dir, category, page), index, manifest.map(prop(category)).map(prop(page)), subVersion),
+            addEntitiesIndex(join(dir, category, page), index, manifest.map(prop(`${category}.${page}`)), subVersion),
         Object.entries(pages))
         .orElse(logReject(`There was an error while trying to write indexes of category '${category}'`)),
     Object.entries(indexes))
