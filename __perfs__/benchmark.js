@@ -27,7 +27,7 @@ const run = ({ name, units }) => {
             console.log(`-> Fastest is ${suite.filter('fastest').map('name')}`)
             console.groupEnd(name)
         })
-        .run({ 'async': true })
+        .run()
 }
 
 module.exports = run
