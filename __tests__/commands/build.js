@@ -15,7 +15,7 @@
  *       * untested: a commiting phase with idiomatic write/remove IOs
  *
  * *: the only exception is the creation of a missing distribution directory of
- * an entry type, eg. 'dist/api/posts/', which is mocked further below.
+ * an entity type, eg. 'dist/api/posts/', which is mocked further below.
  */
 
 const { join, sep } = require('path')
