@@ -35,18 +35,18 @@
   },
   "dependencies": {
     "folktale": "^2.3.2",
-    "highlight.js": "^9.17.1",
+    "highlight.js": "^10.0.1",
     "imagemin": "^7.0.0",
     "imagemin-webp": "^5.1.0",
     "lodash": "^4.17.15",
-    "marked": "^0.8.0",
-    "watchpack": "^1.6.0"
+    "marked": "^1.0.0",
+    "watchpack": "^1.6.1"
   },
   "devDependencies": {
-    "@cdoublev/eslint-config": "^0.3.0",
+    "@cdoublev/eslint-config": "^0.4.1",
     "benchmark": "^2.1.4",
     "eslint": "^6.2.2",
-    "jest": "^25.1.0",
+    "jest": "^25.4.0",
     "jest-junit": "^10.0.0"
   }
 }
