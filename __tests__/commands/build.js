@@ -29,8 +29,7 @@ const Result = require('folktale/result')
  *
  * Update => { entries: EntriesUpdate, indexes: IndexesUpdate, manifest: Manifest }
  *
- * It should help asserting against expected `EntriesUpdate` and `IndexesUpdate`
- * by merging them in a default value.
+ * It should help asserting against expected `Update` by merging default values.
  */
 const expectUpdate = ({ config, entries = {}, indexes = {}, manifest }) => {
     const expected = {
