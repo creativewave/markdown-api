@@ -115,7 +115,7 @@ const getEntryFilesDescriptor = ({
     'content.md': { content, stat: { mtime: 0 } },
     'excerpt.md': { content: excerpt, stat: { mtime: 0 } },
     'index.js': { content: { categories, date, slug, title }, stat: { mtime: 0 } },
-    static: { 'static.jpg': { stat: { mtime: 0 } } },
+    'static': { 'static.jpg': { stat: { mtime: 0 } } },
 })
 
 // Memo: Jest should spy `fs` and `/lib/module/require` before importing `/commands/build.js`
@@ -398,7 +398,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
             name: entryName,
         }
         const pages = { 1: { entities: [entityIndex], next: '', prev: '' } }
-        const indexes = { all: pages, 'test-updated-index': pages }
+        const indexes = { 'all': pages, 'test-updated-index': pages }
 
         return expectUpdate({
             config,
@@ -638,8 +638,8 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
             name: entityIndexes.entry.name,
         }
         const indexes = {
-            all: { 1: { entities: Object.values(entityIndexes), next: '', prev: '' } },
-            test: { 1: { entities: [entityIndexes.before, entityIndexes.after], next: '', prev: '' } },
+            'all': { 1: { entities: Object.values(entityIndexes), next: '', prev: '' } },
+            'test': { 1: { entities: [entityIndexes.before, entityIndexes.after], next: '', prev: '' } },
             'test-updated-index': { 1: { entities: [entityIndexes.entry], next: '', prev: '' } },
         }
 
@@ -913,14 +913,16 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
                 categories: getHash('alltest'),
                 entities: { [entryName]: entityIndex.hash },
                 indexes: {
-                    all: { '1': pages['1'].hash },
-                    test: { '1': pages['1'].hash },
+                    all: { 1: pages[1].hash },
+                    test: { 1: pages[1].hash },
                 },
             },
         })
     })
 
-    // TODO: it should return Update to build endpoints after adding multiple entries [with hash]
-    // TODO: it should override config.hash to true if config.subVersion is true
-    // TODO: it should keep old endpoints when config.subVersion is true
+    /**
+     * TODO: it should return Update to build endpoints after adding multiple entries [with hash]
+     * TODO: it should override config.hash to true if config.subVersion is true
+     * TODO: it should keep old endpoints when config.subVersion is true
+     */
 })

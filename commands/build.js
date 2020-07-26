@@ -297,8 +297,10 @@ const reduceIndexes = write => (update, [category, pages]) => {
         .map(page => join(update.config.distIndexes, category, page))
 
     // (7) Diff `nextPages` against `cache` (previous pages) to remove untouched pages
-    // TODO: use `safeProp` to read pages[page].entities[idx].name and write[category]
-    // TODO: abstract a curried `isStaleEntityIndex` that receives cache and return Maybe
+    /**
+     * TODO: use `safeProp` to read pages[page].entities[idx].name and write[category]
+     * TODO: abstract a curried `isStaleEntityIndex` that receives cache and return Maybe
+     */
     nextPages = filter(
         ([page, index]) => index.entities.find((entity, idx) =>
             // Does entities have been added/moved/removed inside/from the current page?
