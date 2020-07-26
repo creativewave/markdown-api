@@ -1,7 +1,7 @@
 
 module.exports = {
-    add: require('./command/add'),
-    build: require('./command/build'),
-    remove: require('./command/remove'),
-    set: require('./command/set'),
+    add: require('./commands/add'),
+    build: require('./commands/build'),
+    remove: require('./commands/remove'),
+    set: require('./commands/set'),
 }
