@@ -6,15 +6,18 @@ const empty = require('../../lib/collection/empty')
 const filter = require('../../lib/collection/filter')
 const filterTask = require('../../lib/collection/filterTask')
 const into = require('../../lib/collection/into')
+const Maybe = require('folktale/maybe')
 const map = require('../../lib/collection/map')
 const mapTask = require('../../lib/collection/mapTask')
 const mapReducer = require('../../lib/collection/mapReducer')
 const merge = require('../../lib/collection/merge')
 const filterReducer = require('../../lib/collection/filterReducer')
+const Result = require('folktale/result')
 const Task = require('folktale/concurrency/task')
 const toCompact = require('../../lib/collection/toCompact')
 const toFlat = require('../../lib/collection/toFlat')
 const transduce = require('../../lib/collection/transduce')
+const traverse = require('../../lib/collection/traverse')
 
 const nextChar = char => String.fromCharCode(char.charCodeAt(0) + 1)
 const increment = i => ++i
@@ -172,6 +175,61 @@ describe('transduce()', () => {
         const expected = 'oo'
 
         expect(actual).toEqual(expected)
+    })
+})
+
+describe('traverse()', () => {
+    it.each([
+        ['Maybe', Maybe, Maybe.fromNullable],
+        ['Result', Result, compose(Result.fromMaybe, Maybe.fromNullable)],
+        ['Task', Task, a => Task.fromPromised(() => a ? Promise.resolve(a) : Promise.reject(a))()],
+    ])('traverses the transformation context of an Array (%s [a])', async (applicative, type, transformer) => {
+
+        const left = null
+        const right = 1
+
+        switch (applicative) {
+            case 'Maybe':
+                expect(traverse(type, transformer, [right])).toEqual(Maybe.Just([right]))
+                expect(traverse(type, transformer, [left])).toEqual(Maybe.Nothing())
+                break
+            case 'Result':
+                expect(traverse(type, transformer, [right])).toEqual(Result.Ok([right]))
+                expect(traverse(type, transformer, [left])).toEqual(Result.Error())
+                break
+            case 'Task':
+                await traverse(type, transformer, [right]).run().promise().then(actual =>
+                    expect(actual).toEqual([right]))
+                await traverse(type, transformer, [left]).run().promise().catch(actual =>
+                    expect(actual).toEqual(left))
+                break
+        }
+    })
+    it.each([
+        ['Maybe', Maybe, ([i, a]) => Maybe.fromNullable(a).map(a => [i, a])],
+        ['Result', Result, ([i, a]) => Result.fromMaybe(Maybe.fromNullable(a)).map(a => [i, a])],
+        ['Task', Task, ([i, a]) => Task.fromPromised(() => a ? Promise.resolve(a) : Promise.reject(a))().map(a => [i, a])],
+    ])('traverses the transformation context of an Object (%s { Identifier: a })', async (applicative, type, transformer) => {
+
+        const left = null
+        const right = 1
+
+        switch (applicative) {
+            case 'Maybe':
+                expect(traverse(type, transformer, { a: right })).toEqual(Maybe.Just({ a: right }))
+                expect(traverse(type, transformer, { a: left })).toEqual(Maybe.Nothing())
+                break
+            case 'Result':
+                expect(traverse(type, transformer, { a: right })).toEqual(Result.Ok({ a: right }))
+                expect(traverse(type, transformer, { a: left })).toEqual(Result.Error())
+                break
+            case 'Task':
+                await traverse(type, transformer, { a: right }).run().promise().then(actual =>
+                    expect(actual).toEqual({ a: right }))
+                await traverse(type, transformer, { a: left }).run().promise().catch(actual =>
+                    expect(actual).toEqual(left))
+                break
+        }
     })
 })
 
