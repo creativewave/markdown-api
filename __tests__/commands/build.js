@@ -703,7 +703,7 @@ describe("build#getEndpointsUpdate({ type: 'posts', ...config })", () => {
         })
     })
 
-    it('resolves Update to build endpoints after updating index.js of an entry [with cache]', () => {
+    it('resolves Update to build endpoints after updating excerpt.md of an entry [with cache]', () => {
 
         files.src.entry['excerpt.md'] = { content: '*Updated excerpt*', stat: { mtime: 2 } }
         fileSystem.src = { posts: files.src }
